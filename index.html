@@ -23,73 +23,85 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
-            padding: 16px;
+            padding: 14px 16px;
             width: 100%;
             max-width: 400px;
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .avatar {
-            width: 50px;
-            height: 50px;
+            width: 46px;
+            height: 46px;
             border-radius: 50%;
             background: linear-gradient(135deg, #ff9800, #f57c00);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 22px;
+            font-size: 20px;
             font-weight: bold;
-            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
         }
         .user-info { text-align: left; }
-        .user-name { font-size: 18px; font-weight: 700; margin: 0; }
+        .user-name { font-size: 16px; font-weight: 700; margin: 0; }
         .user-sub { font-size: 12px; opacity: 0.6; margin: 2px 0 0 0; }
-        
+
         .game-card {
             background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 24px;
-            padding: 24px;
+            padding: 20px;
             width: 100%;
             max-width: 400px;
             text-align: center;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .plane-icon { font-size: 64px; margin-bottom: 10px; display: block; }
-        .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: 0.5px; }
-        
-        .balance-box {
-            background: rgba(255, 152, 0, 0.1);
-            border: 1px solid rgba(255, 152, 0, 0.3);
-            border-radius: 16px;
-            padding: 12px;
-            margin: 16px 0;
-        }
-        .balance-label { font-size: 12px; color: #ff9800; font-weight: 600; text-transform: uppercase; }
-        .balance-value { font-size: 28px; font-weight: 800; color: #fff; }
+        .plane-icon { font-size: 56px; margin-bottom: 8px; display: block; }
+        .title { font-size: 22px; font-weight: 800; margin: 0 0 16px 0; }
 
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 10px;
+        }
+        .stat-label { font-size: 11px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px; }
+
+        .btn {
+            border: none;
+            width: 100%;
+            padding: 14px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            margin-bottom: 10px;
+        }
+        .btn:active { transform: scale(0.98); }
         .btn-fly {
             background: linear-gradient(135deg, #ff9800, #e65100);
             color: white;
-            border: none;
-            width: 100%;
-            padding: 16px;
-            border-radius: 16px;
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
-            transition: transform 0.1s;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
         }
-        .btn-fly:active { transform: scale(0.98); }
+        .btn-ad {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
 </head>
 <body>
 
-    <!-- Шапка профиля -->
     <div class="profile-card">
         <div class="avatar" id="user-avatar">✈️</div>
         <div class="user-info">
@@ -98,45 +110,74 @@
         </div>
     </div>
 
-    <!-- Игровой блок -->
     <div class="game-card">
         <span class="plane-icon">✈️</span>
         <h1 class="title">ADP Flight League</h1>
-        
-        <div class="balance-box">
-            <div class="balance-label">Ваш баланс</div>
-            <div class="balance-value" id="adp-balance">0 ADP</div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Баланс ADP</div>
+                <div class="stat-value" id="adp-balance">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Попытки</div>
+                <div class="stat-value" id="attempts-count">0</div>
+            </div>
         </div>
 
-        <button class="btn-fly" onclick="alert('Полет скоро появится!')">🚀 В полет!</button>
+        <button class="btn btn-fly" id="fly-btn" onclick="startFlight()">🚀 В полет!</button>
+        <button class="btn btn-ad" id="ad-btn" onclick="watchAd()">📺 Посмотреть рекламу (<span id="ad-count">0</span>/5)</button>
     </div>
 
     <script>
+        let adsWatched = 0;
+        let attempts = 0;
+
         function initApp() {
             const tg = window.Telegram?.WebApp;
-
             if (tg) {
                 tg.ready();
                 tg.expand();
-
                 const user = tg.initDataUnsafe?.user;
                 if (user) {
-                    const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-                    document.getElementById('user-name').innerText = fullName;
+                    document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
                     document.getElementById('user-id').innerText = user.id;
                     document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'без юзернейма';
-                    
                     if (user.first_name) {
                         document.getElementById('user-avatar').innerText = user.first_name[0].toUpperCase();
                     }
                     return;
                 }
             }
-
-            // Фоллбэк для проверки в браузере
             document.getElementById('user-name').innerText = 'Ivan';
             document.getElementById('user-id').innerText = '1285150103';
             document.getElementById('user-username').innerText = '@zoomila1990';
+        }
+
+        function watchAd() {
+            if (adsWatched < 5) {
+                adsWatched++;
+                document.getElementById('ad-count').innerText = adsWatched;
+                if (adsWatched === 5) {
+                    attempts++;
+                    document.getElementById('attempts-count').innerText = attempts;
+                    alert('Поздравляем! Вы просмотрели 5/5 рекламы и получили 1 попытку полета!');
+                } else {
+                    alert(`Реклама просмотрена! (${adsWatched}/5)`);
+                }
+            } else {
+                alert('Вы уже посмотрели максимум рекламы на сегодня (5/5).');
+            }
+        }
+
+        function startFlight() {
+            if (attempts > 0) {
+                attempts--;
+                document.getElementById('attempts-count').innerText = attempts;
+                alert('Полет начался! Удачи!');
+            } else {
+                alert('У вас нет доступных попыток! Посмотрите 5 видеореклам.');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', initApp);

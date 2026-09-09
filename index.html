@@ -4,56 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADP Flight League</title>
-    <!-- Подключаем официальный SDK Telegram -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        * { box-sizing: border-box; }
         body {
-            background-color: var(--tg-theme-bg-color, #121212);
+            background-color: var(--tg-theme-bg-color, #0f172a);
             color: var(--tg-theme-text-color, #ffffff);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
         }
-        .user-card {
-            background: var(--tg-theme-secondary-bg-color, #1e1e1e);
-            padding: 20px;
-            border-radius: 16px;
-            margin-top: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        .profile-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 16px;
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
         }
         .avatar {
-            width: 70px;
-            height: 70px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            background: #ff9800;
+            background: linear-gradient(135deg, #ff9800, #f57c00);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 22px;
             font-weight: bold;
-            margin: 0 auto 12px;
+            box-shadow: 0 4px 10px rgba(255, 152, 0, 0.3);
         }
-        .user-name {
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0 0 6px 0;
+        .user-info { text-align: left; }
+        .user-name { font-size: 18px; font-weight: 700; margin: 0; }
+        .user-sub { font-size: 12px; opacity: 0.6; margin: 2px 0 0 0; }
+        
+        .game-card {
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .info-text {
-            color: #888;
-            font-size: 14px;
-            margin: 0;
+        .plane-icon { font-size: 64px; margin-bottom: 10px; display: block; }
+        .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: 0.5px; }
+        
+        .balance-box {
+            background: rgba(255, 152, 0, 0.1);
+            border: 1px solid rgba(255, 152, 0, 0.3);
+            border-radius: 16px;
+            padding: 12px;
+            margin: 16px 0;
         }
+        .balance-label { font-size: 12px; color: #ff9800; font-weight: 600; text-transform: uppercase; }
+        .balance-value { font-size: 28px; font-weight: 800; color: #fff; }
+
+        .btn-fly {
+            background: linear-gradient(135deg, #ff9800, #e65100);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.4);
+            transition: transform 0.1s;
+        }
+        .btn-fly:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-    <div class="user-card">
+    <!-- Шапка профиля -->
+    <div class="profile-card">
         <div class="avatar" id="user-avatar">✈️</div>
-        <div class="user-name" id="user-name">Загрузка...</div>
-        <p class="info-text">ID: <span id="user-id">---</span></p>
-        <p class="info-text" id="user-username">@---</p>
+        <div class="user-info">
+            <p class="user-name" id="user-name">Загрузка...</p>
+            <p class="user-sub"><span id="user-username">@---</span> | ID: <span id="user-id">---</span></p>
+        </div>
+    </div>
+
+    <!-- Игровой блок -->
+    <div class="game-card">
+        <span class="plane-icon">✈️</span>
+        <h1 class="title">ADP Flight League</h1>
+        
+        <div class="balance-box">
+            <div class="balance-label">Ваш баланс</div>
+            <div class="balance-value" id="adp-balance">0 ADP</div>
+        </div>
+
+        <button class="btn-fly" onclick="alert('Полет скоро появится!')">🚀 В полет!</button>
     </div>
 
     <script>
@@ -64,9 +119,7 @@
                 tg.ready();
                 tg.expand();
 
-                // Получаем данные пользователя
                 const user = tg.initDataUnsafe?.user;
-
                 if (user) {
                     const fullName = user.first_name + (user.last_name ? ' ' + user.last_name : '');
                     document.getElementById('user-name').innerText = fullName;
@@ -80,13 +133,12 @@
                 }
             }
 
-            // Запасной вариант для проверки вне Telegram
-            document.getElementById('user-name').innerText = 'Тестовый Игрок';
-            document.getElementById('user-id').innerText = '00000000';
-            document.getElementById('user-username').innerText = '@test_mode';
+            // Фоллбэк для проверки в браузере
+            document.getElementById('user-name').innerText = 'Ivan';
+            document.getElementById('user-id').innerText = '1285150103';
+            document.getElementById('user-username').innerText = '@zoomila1990';
         }
 
-        // Запускаем считывание после полной загрузки DOM
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>

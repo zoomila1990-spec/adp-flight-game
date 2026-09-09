@@ -130,50 +130,86 @@
     </div>
 
     <script>
-        let adsWatched = 0;
-        let attempts = 0;
+        const API_URL = "https://stash-skilled-stucco.ngrok-free.dev";
+        let currentUser = null;
 
-        function initApp() {
+        async function initApp() {
             const tg = window.Telegram?.WebApp;
             if (tg) {
                 tg.ready();
                 tg.expand();
-                const user = tg.initDataUnsafe?.user;
-                if (user) {
-                    document.getElementById('user-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-                    document.getElementById('user-id').innerText = user.id;
-                    document.getElementById('user-username').innerText = user.username ? '@' + user.username : 'без юзернейма';
-                    if (user.first_name) {
-                        document.getElementById('user-avatar').innerText = user.first_name[0].toUpperCase();
-                    }
-                    return;
-                }
+                currentUser = tg.initDataUnsafe?.user;
             }
-            document.getElementById('user-name').innerText = 'Ivan';
-            document.getElementById('user-id').innerText = '1285150103';
-            document.getElementById('user-username').innerText = '@zoomila1990';
+
+            if (!currentUser) {
+                currentUser = { id: 1285150103, username: 'zoomila1990', first_name: 'Ivan' };
+            }
+
+            document.getElementById('user-name').innerText = currentUser.first_name + (currentUser.last_name ? ' ' + currentUser.last_name : '');
+            document.getElementById('user-id').innerText = currentUser.id;
+            document.getElementById('user-username').innerText = currentUser.username ? '@' + currentUser.username : 'без юзернейма';
+            if (currentUser.first_name) {
+                document.getElementById('user-avatar').innerText = currentUser.first_name[0].toUpperCase();
+            }
+
+            await syncWithBackend();
         }
 
-        function watchAd() {
-            if (adsWatched < 5) {
-                adsWatched++;
-                document.getElementById('ad-count').innerText = adsWatched;
-                if (adsWatched === 5) {
-                    attempts++;
-                    document.getElementById('attempts-count').innerText = attempts;
-                    alert('Поздравляем! Вы просмотрели 5/5 рекламы и получили 1 попытку полета!');
-                } else {
-                    alert(`Реклама просмотрена! (${adsWatched}/5)`);
+        async function syncWithBackend() {
+            try {
+                const response = await fetch(`${API_URL}/api/user/sync`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUser.id,
+                        username: currentUser.username || '',
+                        first_name: currentUser.first_name || ''
+                    })
+                });
+
+                const data = await response.json();
+                if (data.status === 'ok') {
+                    document.getElementById('ad-count').innerText = data.user.daily_ads_count;
+                    document.getElementById('attempts-count').innerText = data.user.game_attempts;
+                    document.getElementById('adp-balance').innerText = data.user.weekly_score;
                 }
-            } else {
-                alert('Вы уже посмотрели максимум рекламы на сегодня (5/5).');
+            } catch (e) {
+                console.error("Ошибка подключения к API:", e);
+            }
+        }
+
+        async function watchAd() {
+            try {
+                const response = await fetch(`${API_URL}/api/user/watch-ad`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUser.id,
+                        username: currentUser.username || '',
+                        first_name: currentUser.first_name || ''
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('ad-count').innerText = data.daily_ads_count;
+                    document.getElementById('attempts-count').innerText = data.game_attempts;
+                    if (data.daily_ads_count === 5) {
+                        alert('Поздравляем! 5/5 рекламы просмотрено. Получена 1 попытка полета!');
+                    } else {
+                        alert(`Просмотр засчитан! (${data.daily_ads_count}/5)`);
+                    }
+                } else if (data.reason) {
+                    alert(data.reason);
+                }
+            } catch (e) {
+                alert("Ошибка связи с сервером.");
             }
         }
 
         function startFlight() {
+            const attempts = parseInt(document.getElementById('attempts-count').innerText);
             if (attempts > 0) {
-                attempts--;
-                document.getElementById('attempts-count').innerText = attempts;
                 alert('Полет начался! Удачи!');
             } else {
                 alert('У вас нет доступных попыток! Посмотрите 5 видеореклам.');

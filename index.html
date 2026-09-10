@@ -48,8 +48,8 @@
         .user-sub { font-size: 11px; opacity: 0.6; margin: 2px 0 0 0; }
 
         .game-card {
-            background: linear-gradient(180deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.9) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 24px;
             padding: 16px;
             width: 100%;
@@ -58,7 +58,7 @@
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         .plane-icon { font-size: 48px; margin-bottom: 4px; display: block; }
-        .title { font-size: 20px; font-weight: 800; margin: 0 0 12px 0; }
+        .title { font-size: 20px; font-weight: 800; margin: 0 0 12px 0; color: #ffffff; }
 
         .stats-grid {
             display: grid;
@@ -67,13 +67,13 @@
             margin-bottom: 14px;
         }
         .stat-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 14px;
             padding: 8px;
         }
-        .stat-label { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; }
-        .stat-value { font-size: 18px; font-weight: 800; color: #fff; margin-top: 2px; }
+        .stat-label { font-size: 10px; color: #cbd5e1; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 2px; }
 
         .btn {
             border: none;
@@ -93,8 +93,8 @@
             box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
         }
         .btn-ad {
-            background: rgba(59, 130, 246, 0.2);
-            color: #60a5fa;
+            background: rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
         
@@ -174,17 +174,17 @@
 
     <!-- Игровой экран -->
     <div id="game-container">
-        <div class="game-card" style="margin-bottom: 8px; padding: 8px 14px; width: 100%;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px;">
-                <span>Счет: <span id="current-score">0</span></span>
-                <span style="color: #ff9800;">⚡ Хардкор полет</span>
+        <div class="game-card" style="margin-bottom: 8px; padding: 10px 14px; width: 100%;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #ffffff;">
+                <span>Счет: <span id="current-score" style="color: #60a5fa;">0</span></span>
+                <span style="color: #fbbf24;">⚡ Хардкор: <span id="current-speed-level">x1.0</span></span>
             </div>
         </div>
         
         <canvas id="flightCanvas" width="380" height="420"></canvas>
 
         <div class="control-panel">
-            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">Штурвал</div>
+            <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">Штурвал</div>
             <input type="range" min="0" max="380" value="190" class="slider" id="flightSlider">
         </div>
 
@@ -201,12 +201,13 @@
         
         let gameInterval = null;
         let score = 0;
+        let gameSpeedMultiplier = 1;
         
         let plane = { 
             x: 190, 
             y: 320, 
-            width: 36, 
-            height: 48, 
+            width: 38, 
+            height: 50, 
             targetX: 190, 
             speed: 0.15 
         };
@@ -296,6 +297,10 @@
             document.getElementById('game-container').style.display = 'flex';
 
             score = 0;
+            gameSpeedMultiplier = 1;
+            document.getElementById('current-speed-level').innerText = 'x1.0';
+            document.getElementById('current-score').innerText = '0';
+
             plane.x = canvas.width / 2 - plane.width / 2;
             plane.targetX = plane.x;
             slider.value = plane.x + plane.width / 2;
@@ -319,6 +324,11 @@
             frameCount++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Плавное увеличение сложности (скорости игры) со временем
+            gameSpeedMultiplier = 1 + (score * 0.03); // Чем выше счет, тем быстрее всё падает
+            if (gameSpeedMultiplier > 2.5) gameSpeedMultiplier = 2.5; // Ограничение максимальной скорости
+            document.getElementById('current-speed-level').innerText = gameSpeedMultiplier.toFixed(1);
+
             // Движение самолета с инерцией
             let dx = plane.targetX - plane.x;
             plane.x += dx * plane.speed;
@@ -326,13 +336,12 @@
             if (plane.x < 0) plane.x = 0;
             if (plane.x > canvas.width - plane.width) plane.x = canvas.width - plane.width;
 
-            // Ограничение максимального угла наклона (в радианах: ~35 градусов)
             let maxTilt = 0.6;
             let tilt = dx * 0.04;
             if (tilt > maxTilt) tilt = maxTilt;
             if (tilt < -maxTilt) tilt = -maxTilt;
 
-            // Рисуем реалистичный самолет (вид сверху)
+            // Отрисовка красивого фирменного самолетика (как в иконке меню)
             ctx.save();
             ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2);
             ctx.rotate(tilt);
@@ -340,42 +349,42 @@
             // Тень
             ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
             ctx.beginPath();
-            ctx.ellipse(4, 6, 12, 22, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, 6, 14, 24, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Фюзеляж (корпус самолета)
-            ctx.fillStyle = '#f1f5f9';
+            // Основной корпус (белый самолет)
+            ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.moveTo(0, -24);
-            ctx.lineTo(6, -10);
-            ctx.lineTo(6, 16);
-            ctx.lineTo(0, 24);
-            ctx.lineTo(-6, 16);
-            ctx.lineTo(-6, -10);
+            ctx.moveTo(0, -25);
+            ctx.lineTo(8, -10);
+            ctx.lineTo(7, 18);
+            ctx.lineTo(0, 25);
+            ctx.lineTo(-7, 18);
+            ctx.lineTo(-8, -10);
             ctx.closePath();
             ctx.fill();
 
-            // Нос самолета (кабина)
-            ctx.fillStyle = '#38bdf8';
+            // Кабина пилота
+            ctx.fillStyle = '#0284c7';
             ctx.beginPath();
-            ctx.arc(0, -14, 4, 0, Math.PI * 2);
+            ctx.arc(0, -15, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // Главные крылья
+            // Ярко-оранжевые крылья (как на иконке)
+            ctx.fillStyle = '#ff9800';
+            ctx.beginPath();
+            ctx.moveTo(-22, -2);
+            ctx.lineTo(22, -2);
+            ctx.lineTo(14, 10);
+            ctx.lineTo(-14, 10);
+            ctx.closePath();
+            ctx.fill();
+
+            // Хвостовое оперение
             ctx.fillStyle = '#f97316';
             ctx.beginPath();
-            ctx.moveTo(-18, -2);
-            ctx.lineTo(18, -2);
-            ctx.lineTo(12, 10);
-            ctx.lineTo(-12, 10);
-            ctx.closePath();
-            ctx.fill();
-
-            // Хвостовые крылья
-            ctx.fillStyle = '#ea580c';
-            ctx.beginPath();
-            ctx.moveTo(-10, 18);
-            ctx.lineTo(10, 18);
+            ctx.moveTo(-11, 18);
+            ctx.lineTo(11, 18);
             ctx.lineTo(6, 23);
             ctx.lineTo(-6, 23);
             ctx.closePath();
@@ -383,16 +392,16 @@
 
             ctx.restore();
 
-            // Спавн препятствий по ВСЕЙ ширине экрана (края тоже опасны)
+            // Спавн препятствий с учетом текущей скорости
+            let spawnIntervalThreshold = Math.max(12, 35 - Math.floor(score * 0.8));
             if (frameCount >= nextSpawnTime) {
                 const types = [
-                    { type: 'meteor', w: 55, h: 55, speed: 3.8 },
-                    { type: 'bird', w: 40, h: 30, speed: 4.2 },
-                    { type: 'cloud', w: 75, h: 45, speed: 2.8 }
+                    { type: 'meteor', w: 55, h: 55, speed: 3.5 },
+                    { type: 'bird', w: 40, h: 30, speed: 4.0 },
+                    { type: 'cloud', w: 75, h: 45, speed: 2.6 }
                 ];
                 
                 const selected = types[Math.floor(Math.random() * types.length)];
-                // Случайная позиция от 0 до ширины минус ширина объекта (края полностью задействованы)
                 const randomX = Math.random() * (canvas.width - selected.w);
 
                 obstacles.push({
@@ -401,32 +410,30 @@
                     width: selected.w,
                     height: selected.h,
                     type: selected.type,
-                    speed: selected.speed,
+                    baseSpeed: selected.speed,
                     passed: false
                 });
 
-                nextSpawnTime = frameCount + Math.floor(Math.random() * 35) + 20;
+                nextSpawnTime = frameCount + Math.floor(Math.random() * spawnIntervalThreshold) + 15;
             }
 
-            // Отрисовка препятствий
+            // Движение и отрисовка препятствий
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].y += obstacles[i].speed;
+                // Применяем текущий множитель скорости игры
+                obstacles[i].y += obstacles[i].baseSpeed * gameSpeedMultiplier;
 
                 ctx.save();
                 if (obstacles[i].type === 'meteor') {
-                    // Большой метеорит с кратерами
                     ctx.fillStyle = '#475569';
                     ctx.beginPath();
                     ctx.arc(obstacles[i].x + obstacles[i].width/2, obstacles[i].y + obstacles[i].height/2, obstacles[i].width/2, 0, Math.PI * 2);
                     ctx.fill();
-                    // Кратеры на метеорите
                     ctx.fillStyle = '#334155';
                     ctx.beginPath();
                     ctx.arc(obstacles[i].x + 15, obstacles[i].y + 20, 8, 0, Math.PI * 2);
                     ctx.arc(obstacles[i].x + 35, obstacles[i].y + 35, 6, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (obstacles[i].type === 'bird') {
-                    // Птица
                     ctx.strokeStyle = '#b45309';
                     ctx.lineWidth = 4;
                     ctx.beginPath();
@@ -437,7 +444,6 @@
                     ctx.quadraticCurveTo(bx + 10, by + 10, bx + 20, by - 10);
                     ctx.stroke();
                 } else {
-                    // Пушистое облако
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                     let cx = obstacles[i].x + obstacles[i].width / 2;
                     let cy = obstacles[i].y + obstacles[i].height / 2;
@@ -449,14 +455,14 @@
                 }
                 ctx.restore();
 
-                // Начисление очков
+                // Начисление счета строго по 1 очку за объект
                 if (!obstacles[i].passed && obstacles[i].y > plane.y + plane.height) {
-                    score += 10;
+                    score += 1; // Увеличено на 1 за каждое препятствие
                     obstacles[i].passed = true;
                     document.getElementById('current-score').innerText = score;
                 }
 
-                // Жесткая проверка столкновений (края теперь тоже бьют самолет)
+                // Проверка столкновений
                 let hitBoxMargin = 6;
                 if (
                     plane.x + hitBoxMargin < obstacles[i].x + obstacles[i].width - hitBoxMargin &&

@@ -35,7 +35,7 @@
             width: 44px;
             height: 44px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #ff9800, #f57c00);
             color: #fff;
             display: flex;
             align-items: center;
@@ -88,9 +88,9 @@
         }
         .btn:active { transform: scale(0.98); }
         .btn-fly {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #ff9800, #e65100);
             color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
         }
         .btn-ad {
             background: rgba(59, 130, 246, 0.25);
@@ -133,7 +133,7 @@
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #3b82f6;
+            background: #ff9800;
             cursor: pointer;
             box-shadow: 0 3px 8px rgba(0,0,0,0.4);
             border: 2px solid #fff;
@@ -212,33 +212,33 @@
             speed: 0.18 
         };
 
-        // Рисуем самолет строго ровно вверх (без перекосов и наклонов)
+        // Самолет с яркими оранжевыми крыльями (отлично видно на голубом небе)
         const planeImage = new Image();
         planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
               <defs>
                 <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#ffffff"/>
-                  <stop offset="100%" stop-color="#cbd5e1"/>
+                  <stop offset="100%" stop-color="#e2e8f0"/>
                 </linearGradient>
                 <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#3b82f6"/>
-                  <stop offset="100%" stop-color="#2563eb"/>
+                  <stop offset="0%" stop-color="#ff9800"/>
+                  <stop offset="100%" stop-color="#f57c00"/>
                 </linearGradient>
               </defs>
               <!-- Тень -->
               <ellipse cx="50" cy="54" rx="14" ry="32" fill="rgba(0,0,0,0.2)"/>
-              <!-- Левое крыло -->
-              <path d="M 50 40 L 10 55 L 15 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
-              <!-- Правое крыло -->
-              <path d="M 50 40 L 90 55 L 85 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
-              <!-- Основной корпус (тело) -->
-              <rect x="40" y="15" width="20" height="70" rx="10" fill="url(#bodyGrad)" stroke="#94a3b8" stroke-width="1.5"/>
+              <!-- Левое крыло (оранжевое) -->
+              <path d="M 50 40 L 10 55 L 15 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
+              <!-- Правое крыло (оранжевое) -->
+              <path d="M 50 40 L 90 55 L 85 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
+              <!-- Основной корпус -->
+              <rect x="40" y="15" width="20" height="70" rx="10" fill="url(#bodyGrad)" stroke="#cbd5e1" stroke-width="1.5"/>
               <!-- Кабина пилота -->
-              <rect x="44" y="22" width="12" height="16" rx="6" fill="#38bdf8"/>
+              <rect x="44" y="22" width="12" height="16" rx="6" fill="#0284c7"/>
               <!-- Хвостовое оперение -->
-              <path d="M 42 75 L 28 88 L 34 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
-              <path d="M 58 75 L 72 88 L 66 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
+              <path d="M 42 75 L 28 88 L 34 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
+              <path d="M 58 75 L 72 88 L 66 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
             </svg>
         `);
 
@@ -359,17 +359,27 @@
             if (gameSpeedMultiplier > 2.8) gameSpeedMultiplier = 2.8;
             document.getElementById('current-speed-level').innerText = gameSpeedMultiplier.toFixed(1);
 
-            // Плавное движение самолета по горизонтали за ползунком
+            // Движение самолета за ползунком
             let dx = plane.targetX - plane.x;
             plane.x += dx * plane.speed;
 
             if (plane.x < 0) plane.x = 0;
             if (plane.x > canvas.width - plane.width) plane.x = canvas.width - plane.width;
 
-            // Отрисовка самолета строго вертикально (смотрит ровно вверх)
-            ctx.drawImage(planeImage, plane.x, plane.y, plane.width, plane.height);
+            // Плавный и красивый наклон самолета в сторону движения
+            let maxTilt = 0.45;
+            let tilt = dx * 0.035;
+            if (tilt > maxTilt) tilt = maxTilt;
+            if (tilt < -maxTilt) tilt = -maxTilt;
 
-            // Динамический спавн объектов (больше очков -> больше объектов на экране)
+            // Отрисовка с учетом наклона
+            ctx.save();
+            ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2);
+            ctx.rotate(tilt);
+            ctx.drawImage(planeImage, -plane.width / 2, -plane.height / 2, plane.width, plane.height);
+            ctx.restore();
+
+            // Динамический спавн объектов
             let dynamicSpawnDelay = Math.max(7, 26 - Math.floor(score * 0.8));
             if (frameCount >= nextSpawnTime) {
                 const types = [

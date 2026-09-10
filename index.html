@@ -97,41 +97,116 @@
             color: #60a5fa;
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        #game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+        canvas {
+            background: #1e293b;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            width: 100%;
+            height: 360px;
+        }
+        .control-panel {
+            width: 100%;
+            margin-top: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .slider {
+            width: 100%;
+            appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #475569;
+            outline: none;
+            opacity: 0.9;
+            transition: opacity .2s;
+        }
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #ff9800;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
 
-    <div class="profile-card">
-        <div class="avatar" id="user-avatar">✈️</div>
-        <div class="user-info">
-            <p class="user-name" id="user-name">Загрузка...</p>
-            <p class="user-sub"><span id="user-username">@---</span> | ID: <span id="user-id">---</span></p>
+    <!-- Меню -->
+    <div id="menu-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="profile-card">
+            <div class="avatar" id="user-avatar">✈️</div>
+            <div class="user-info">
+                <p class="user-name" id="user-name">Загрузка...</p>
+                <p class="user-sub"><span id="user-username">@---</span> | ID: <span id="user-id">---</span></p>
+            </div>
+        </div>
+
+        <div class="game-card">
+            <span class="plane-icon">✈️</span>
+            <h1 class="title">ADP Flight League</h1>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-label">Баланс ADP</div>
+                    <div class="stat-value" id="adp-balance">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Попытки</div>
+                    <div class="stat-value" id="attempts-count">0</div>
+                </div>
+            </div>
+
+            <button class="btn btn-fly" id="fly-btn" onclick="startFlight()">🚀 В полет!</button>
+            <button class="btn btn-ad" id="ad-btn" onclick="watchAd()">📺 Посмотреть рекламу (<span id="ad-count">0</span>/5)</button>
         </div>
     </div>
 
-    <div class="game-card">
-        <span class="plane-icon">✈️</span>
-        <h1 class="title">ADP Flight League</h1>
-
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-label">Баланс ADP</div>
-                <div class="stat-value" id="adp-balance">0</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-label">Попытки</div>
-                <div class="stat-value" id="attempts-count">0</div>
+    <!-- Игровой экран -->
+    <div id="game-container">
+        <div class="game-card" style="margin-bottom: 10px; padding: 10px; width: 100%;">
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 16px;">
+                <span>Счет: <span id="current-score">0</span></span>
+                <span style="color: #ff9800;">✈️ Рандомный полет</span>
             </div>
         </div>
+        
+        <canvas id="flightCanvas" width="360" height="360"></canvas>
 
-        <button class="btn btn-fly" id="fly-btn" onclick="startFlight()">🚀 В полет!</button>
-        <button class="btn btn-ad" id="ad-btn" onclick="watchAd()">📺 Посмотреть рекламу (<span id="ad-count">0</span>/5)</button>
+        <div class="control-panel">
+            <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 600; text-transform: uppercase;">Управление полетом</div>
+            <input type="range" min="0" max="360" value="180" class="slider" id="flightSlider">
+        </div>
+
+        <button class="btn btn-ad" style="margin-top: 10px;" onclick="returnToMenu()">⬅️ Назад в меню</button>
     </div>
 
     <script>
         const API_URL = "https://stash-skilled-stucco.ngrok-free.dev";
         let currentUser = null;
+
+        const canvas = document.getElementById('flightCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('flightSlider');
+        
+        let gameInterval = null;
+        let score = 0;
+        let plane = { x: 180, y: 280, width: 28, height: 36 };
+        let obstacles = [];
+        let nextSpawnTime = 0;
+        let frameCount = 0;
+        let isPlaying = false;
 
         async function initApp() {
             const tg = window.Telegram?.WebApp;
@@ -207,13 +282,146 @@
             }
         }
 
-        function startFlight() {
+        async function startFlight() {
             const attempts = parseInt(document.getElementById('attempts-count').innerText);
-            if (attempts > 0) {
-                alert('Полет начался! Удачи!');
-            } else {
-                alert('У вас нет доступных попыток! Посмотрите 5 видеореклам.');
+            if (attempts <= 0) {
+                alert('У вас нет доступных попыток! Посмотрите видеорекламу.');
+                return;
             }
+
+            document.getElementById('menu-container').style.display = 'none';
+            document.getElementById('game-container').style.display = 'flex';
+
+            score = 0;
+            plane.x = canvas.width / 2 - plane.width / 2;
+            slider.value = 180;
+            obstacles = [];
+            frameCount = 0;
+            nextSpawnTime = 40; // Первое препятствие появится быстро
+            isPlaying = true;
+
+            if (gameInterval) clearInterval(gameInterval);
+            gameInterval = setInterval(updateGame, 20);
+        }
+
+        slider.addEventListener('input', () => {
+            if (isPlaying) {
+                const sliderVal = parseInt(slider.value);
+                plane.x = (sliderVal / 360) * (canvas.width - plane.width);
+            }
+        });
+
+        function updateGame() {
+            frameCount++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Динамический фон (движущиеся полосы трассы)
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i, canvas.height);
+            }
+            ctx.stroke();
+
+            // Отрисовка самолетика
+            ctx.fillStyle = '#ff9800';
+            ctx.fillRect(plane.x, plane.y, plane.width, plane.height);
+            ctx.fillStyle = '#fff';
+            ctx.font = '18px sans-serif';
+            ctx.fillText('✈️', plane.x + 2, plane.y + 24);
+
+            // Абсолютно рандомный спавн препятствий (разные типы: облако, здание, птица, шар)
+            if (frameCount >= nextSpawnTime) {
+                const types = [
+                    { name: '☁️ Туча', color: '#64748b', w: Math.random() * 60 + 60, h: 26 },
+                    { name: '🏢 Здание', color: '#334155', w: Math.random() * 50 + 50, h: 32 },
+                    { name: '🦅 Птица', color: '#b45309', w: 35, h: 20 },
+                    { name: '🎈 Шар', color: '#ef4444', w: 30, h: 30 }
+                ];
+                
+                const selectedType = types[Math.floor(Math.random() * types.length)];
+                const randomX = Math.random() * (canvas.width - selectedType.w);
+                const randomSpeed = Math.random() * 1.5 + 2.2; // Разная скорость падения
+
+                obstacles.push({
+                    x: randomX,
+                    y: -40,
+                    width: selectedType.w,
+                    height: selectedType.h,
+                    name: selectedType.name,
+                    color: selectedType.color,
+                    speed: randomSpeed,
+                    passed: false
+                });
+
+                // Следующее препятствие появится через случайное количество кадров (от 35 до 75)
+                nextSpawnTime = frameCount + Math.floor(Math.random() * 40) + 35;
+            }
+
+            // Движение и отрисовка препятствий
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += obstacles[i].speed;
+
+                ctx.fillStyle = obstacles[i].color;
+                ctx.fillRect(obstacles[i].x, obstacles[i].y, obstacles[i].width, obstacles[i].height);
+                ctx.fillStyle = '#fff';
+                ctx.font = '11px sans-serif';
+                ctx.fillText(obstacles[i].name, obstacles[i].x + 4, obstacles[i].y + 17);
+
+                // Начисление очков при успешном пролете
+                if (!obstacles[i].passed && obstacles[i].y > plane.y + plane.height) {
+                    score += 10;
+                    obstacles[i].passed = true;
+                    document.getElementById('current-score').innerText = score;
+                }
+
+                // Проверка столкновений с учетом размеров
+                if (
+                    plane.x < obstacles[i].x + obstacles[i].width &&
+                    plane.x + plane.width > obstacles[i].x &&
+                    plane.y < obstacles[i].y + obstacles[i].height &&
+                    plane.y + plane.height > obstacles[i].y
+                ) {
+                    gameOver();
+                }
+
+                // Удаление объектов, вышедших за пределы экрана
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        async function gameOver() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            alert(`Игра окончена! Ваш счет: ${score}`);
+
+            try {
+                const response = await fetch(`${API_URL}/api/user/finish-game`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        telegram_id: currentUser.id,
+                        score: score
+                    })
+                });
+                await response.json();
+            } catch (e) {
+                console.error("Ошибка сохранения результатов игры:", e);
+            }
+
+            returnToMenu();
+        }
+
+        function returnToMenu() {
+            isPlaying = false;
+            clearInterval(gameInterval);
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('menu-container').style.display = 'flex';
+            syncWithBackend();
         }
 
         document.addEventListener('DOMContentLoaded', initApp);

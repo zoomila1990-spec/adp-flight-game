@@ -159,10 +159,7 @@
             try {
                 const response = await fetch(`${API_URL}/api/user/sync`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         telegram_id: currentUser.id,
                         username: currentUser.username || '',
@@ -185,10 +182,7 @@
             try {
                 const response = await fetch(`${API_URL}/api/user/watch-ad`, {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'ngrok-skip-browser-warning': 'true'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         telegram_id: currentUser.id,
                         username: currentUser.username || '',

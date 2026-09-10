@@ -205,39 +205,40 @@
         
         let plane = { 
             x: 190, 
-            y: 310, 
-            width: 48, 
-            height: 48, 
+            y: 300, 
+            width: 50, 
+            height: 50, 
             targetX: 190, 
-            speed: 0.15 
+            speed: 0.18 
         };
 
-        // Загружаем то самое изображение самолета из вашей картинки
+        // Рисуем самолет строго ровно вверх (без перекосов и наклонов)
         const planeImage = new Image();
         planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
               <defs>
-                <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#e2e8f0"/>
+                <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#ffffff"/>
                   <stop offset="100%" stop-color="#cbd5e1"/>
                 </linearGradient>
-                <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#60a5fa"/>
+                <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#3b82f6"/>
                   <stop offset="100%" stop-color="#2563eb"/>
                 </linearGradient>
               </defs>
               <!-- Тень -->
-              <ellipse cx="52" cy="55" rx="18" ry="32" fill="rgba(0,0,0,0.25)" transform="rotate(-30 52 55)"/>
+              <ellipse cx="50" cy="54" rx="14" ry="32" fill="rgba(0,0,0,0.2)"/>
               <!-- Левое крыло -->
-              <path d="M 25 45 L 5 30 L 15 20 L 40 38 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
+              <path d="M 50 40 L 10 55 L 15 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
               <!-- Правое крыло -->
-              <path d="M 75 55 L 95 70 L 85 80 L 60 62 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
-              <!-- Основной корпус -->
-              <rect x="40" y="20" width="20" height="60" rx="10" fill="url(#bodyGrad)" stroke="#94a3b8" stroke-width="1.5" transform="rotate(-30 50 50)"/>
+              <path d="M 50 40 L 90 55 L 85 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
+              <!-- Основной корпус (тело) -->
+              <rect x="40" y="15" width="20" height="70" rx="10" fill="url(#bodyGrad)" stroke="#94a3b8" stroke-width="1.5"/>
               <!-- Кабина пилота -->
-              <rect x="46" y="24" width="8" height="12" rx="4" fill="#38bdf8" transform="rotate(-30 50 50)"/>
+              <rect x="44" y="22" width="12" height="16" rx="6" fill="#38bdf8"/>
               <!-- Хвостовое оперение -->
-              <path d="M 35 75 L 20 85 L 25 92 L 42 82 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
+              <path d="M 42 75 L 28 88 L 34 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
+              <path d="M 58 75 L 72 88 L 66 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#1d4ed8" stroke-width="1.5"/>
             </svg>
         `);
 
@@ -353,31 +354,22 @@
             frameCount++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Плавное увеличение сложности и скорости игры
+            // Увеличение сложности и скорости игры
             gameSpeedMultiplier = 1 + (score * 0.04); 
             if (gameSpeedMultiplier > 2.8) gameSpeedMultiplier = 2.8;
             document.getElementById('current-speed-level').innerText = gameSpeedMultiplier.toFixed(1);
 
-            // Движение самолета с инерцией
+            // Плавное движение самолета по горизонтали за ползунком
             let dx = plane.targetX - plane.x;
             plane.x += dx * plane.speed;
 
             if (plane.x < 0) plane.x = 0;
             if (plane.x > canvas.width - plane.width) plane.x = canvas.width - plane.width;
 
-            let maxTilt = 0.5;
-            let tilt = dx * 0.03;
-            if (tilt > maxTilt) tilt = maxTilt;
-            if (tilt < -maxTilt) tilt = -maxTilt;
+            // Отрисовка самолета строго вертикально (смотрит ровно вверх)
+            ctx.drawImage(planeImage, plane.x, plane.y, plane.width, plane.height);
 
-            // Отрисовка того самого самолетика из вашей картинки
-            ctx.save();
-            ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2);
-            ctx.rotate(tilt);
-            ctx.drawImage(planeImage, -plane.width / 2, -plane.height / 2, plane.width, plane.height);
-            ctx.restore();
-
-            // Динамический спавн объектов: с ростом счета препятствий становится больше и они чаще появляются
+            // Динамический спавн объектов (больше очков -> больше объектов на экране)
             let dynamicSpawnDelay = Math.max(7, 26 - Math.floor(score * 0.8));
             if (frameCount >= nextSpawnTime) {
                 const types = [

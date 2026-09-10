@@ -177,7 +177,7 @@
         <div class="game-card" style="margin-bottom: 8px; padding: 10px 14px; width: 100%;">
             <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #ffffff;">
                 <span>Счет: <span id="current-score" style="color: #60a5fa;">0</span></span>
-                <span style="color: #fbbf24;">⚡ Хардкор: <span id="current-speed-level">x1.0</span></span>
+                <span style="color: #fbbf24;">⚡ Сложность: <span id="current-speed-level">x1.0</span></span>
             </div>
         </div>
         
@@ -205,9 +205,9 @@
         
         let plane = { 
             x: 190, 
-            y: 320, 
-            width: 38, 
-            height: 50, 
+            y: 310, 
+            width: 44, 
+            height: 56, 
             targetX: 190, 
             speed: 0.15 
         };
@@ -307,7 +307,7 @@
             
             obstacles = [];
             frameCount = 0;
-            nextSpawnTime = 30;
+            nextSpawnTime = 20;
             isPlaying = true;
 
             if (gameInterval) clearInterval(gameInterval);
@@ -324,9 +324,9 @@
             frameCount++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Плавное увеличение сложности (скорости игры) со временем
-            gameSpeedMultiplier = 1 + (score * 0.03); // Чем выше счет, тем быстрее всё падает
-            if (gameSpeedMultiplier > 2.5) gameSpeedMultiplier = 2.5; // Ограничение максимальной скорости
+            // Плавное увеличение сложности и скорости игры
+            gameSpeedMultiplier = 1 + (score * 0.04); 
+            if (gameSpeedMultiplier > 2.8) gameSpeedMultiplier = 2.8;
             document.getElementById('current-speed-level').innerText = gameSpeedMultiplier.toFixed(1);
 
             // Движение самолета с инерцией
@@ -336,69 +336,67 @@
             if (plane.x < 0) plane.x = 0;
             if (plane.x > canvas.width - plane.width) plane.x = canvas.width - plane.width;
 
-            let maxTilt = 0.6;
+            let maxTilt = 0.55;
             let tilt = dx * 0.04;
             if (tilt > maxTilt) tilt = maxTilt;
             if (tilt < -maxTilt) tilt = -maxTilt;
 
-            // Отрисовка красивого фирменного самолетика (как в иконке меню)
+            // Отрисовка точной копии самолета из меню (вид сверху)
             ctx.save();
             ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2);
             ctx.rotate(tilt);
 
-            // Тень
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            // Тень самолета
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
             ctx.beginPath();
-            ctx.ellipse(4, 6, 14, 24, 0, 0, Math.PI * 2);
+            ctx.ellipse(4, 6, 16, 26, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Основной корпус (белый самолет)
+            // Основной фюзеляж (белый корпус с обтекаемой носовой частью)
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.moveTo(0, -25);
-            ctx.lineTo(8, -10);
-            ctx.lineTo(7, 18);
-            ctx.lineTo(0, 25);
-            ctx.lineTo(-7, 18);
-            ctx.lineTo(-8, -10);
+            ctx.moveTo(0, -28);
+            ctx.bezierCurveTo(8, -15, 8, 15, 6, 26);
+            ctx.lineTo(-6, 26);
+            ctx.bezierCurveTo(-8, 15, -8, -15, 0, -28);
             ctx.closePath();
             ctx.fill();
 
             // Кабина пилота
-            ctx.fillStyle = '#0284c7';
+            ctx.fillStyle = '#0ea5e9';
             ctx.beginPath();
-            ctx.arc(0, -15, 4, 0, Math.PI * 2);
+            ctx.arc(0, -16, 4.5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Ярко-оранжевые крылья (как на иконке)
+            // Большие оранжевые крылья (как на иконке)
             ctx.fillStyle = '#ff9800';
             ctx.beginPath();
-            ctx.moveTo(-22, -2);
-            ctx.lineTo(22, -2);
-            ctx.lineTo(14, 10);
-            ctx.lineTo(-14, 10);
+            ctx.moveTo(-24, -3);
+            ctx.lineTo(24, -3);
+            ctx.lineTo(15, 12);
+            ctx.lineTo(-15, 12);
             ctx.closePath();
             ctx.fill();
 
             // Хвостовое оперение
-            ctx.fillStyle = '#f97316';
+            ctx.fillStyle = '#ea580c';
             ctx.beginPath();
-            ctx.moveTo(-11, 18);
-            ctx.lineTo(11, 18);
-            ctx.lineTo(6, 23);
-            ctx.lineTo(-6, 23);
+            ctx.moveTo(-12, 20);
+            ctx.lineTo(12, 20);
+            ctx.lineTo(7, 27);
+            ctx.lineTo(-7, 27);
             ctx.closePath();
             ctx.fill();
 
             ctx.restore();
 
-            // Спавн препятствий с учетом текущей скорости
-            let spawnIntervalThreshold = Math.max(12, 35 - Math.floor(score * 0.8));
+            // Динамический спавн объектов: чем выше счет, тем чаще появляются новые препятствия (больше их на экране)
+            let dynamicSpawnDelay = Math.max(8, 28 - Math.floor(score * 0.7));
             if (frameCount >= nextSpawnTime) {
                 const types = [
-                    { type: 'meteor', w: 55, h: 55, speed: 3.5 },
-                    { type: 'bird', w: 40, h: 30, speed: 4.0 },
-                    { type: 'cloud', w: 75, h: 45, speed: 2.6 }
+                    { type: 'meteor', w: 50, h: 50, speed: 3.2 },
+                    { type: 'bird', w: 38, h: 28, speed: 3.8 },
+                    { type: 'cloud', w: 70, h: 42, speed: 2.4 }
                 ];
                 
                 const selected = types[Math.floor(Math.random() * types.length)];
@@ -414,12 +412,11 @@
                     passed: false
                 });
 
-                nextSpawnTime = frameCount + Math.floor(Math.random() * spawnIntervalThreshold) + 15;
+                nextSpawnTime = frameCount + Math.floor(Math.random() * dynamicSpawnDelay) + 8;
             }
 
             // Движение и отрисовка препятствий
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                // Применяем текущий множитель скорости игры
                 obstacles[i].y += obstacles[i].baseSpeed * gameSpeedMultiplier;
 
                 ctx.save();
@@ -430,34 +427,34 @@
                     ctx.fill();
                     ctx.fillStyle = '#334155';
                     ctx.beginPath();
-                    ctx.arc(obstacles[i].x + 15, obstacles[i].y + 20, 8, 0, Math.PI * 2);
-                    ctx.arc(obstacles[i].x + 35, obstacles[i].y + 35, 6, 0, Math.PI * 2);
+                    ctx.arc(obstacles[i].x + 14, obstacles[i].y + 18, 7, 0, Math.PI * 2);
+                    ctx.arc(obstacles[i].x + 32, obstacles[i].y + 32, 5, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (obstacles[i].type === 'bird') {
                     ctx.strokeStyle = '#b45309';
-                    ctx.lineWidth = 4;
+                    ctx.lineWidth = 3.5;
                     ctx.beginPath();
                     let bx = obstacles[i].x + obstacles[i].width/2;
                     let by = obstacles[i].y + obstacles[i].height/2;
-                    ctx.moveTo(bx - 20, by - 10);
-                    ctx.quadraticCurveTo(bx - 10, by + 10, bx, by);
-                    ctx.quadraticCurveTo(bx + 10, by + 10, bx + 20, by - 10);
+                    ctx.moveTo(bx - 18, by - 8);
+                    ctx.quadraticCurveTo(bx - 9, by + 9, bx, by);
+                    ctx.quadraticCurveTo(bx + 9, by + 9, bx + 18, by - 8);
                     ctx.stroke();
                 } else {
                     ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
                     let cx = obstacles[i].x + obstacles[i].width / 2;
                     let cy = obstacles[i].y + obstacles[i].height / 2;
                     ctx.beginPath();
-                    ctx.arc(cx - 15, cy, 18, 0, Math.PI * 2);
-                    ctx.arc(cx + 15, cy, 20, 0, Math.PI * 2);
-                    ctx.arc(cx, cy - 6, 22, 0, Math.PI * 2);
+                    ctx.arc(cx - 14, cy, 16, 0, Math.PI * 2);
+                    ctx.arc(cx + 14, cy, 18, 0, Math.PI * 2);
+                    ctx.arc(cx, cy - 6, 20, 0, Math.PI * 2);
                     ctx.fill();
                 }
                 ctx.restore();
 
-                // Начисление счета строго по 1 очку за объект
+                // Начисление счета по 1 очку за объект
                 if (!obstacles[i].passed && obstacles[i].y > plane.y + plane.height) {
-                    score += 1; // Увеличено на 1 за каждое препятствие
+                    score += 1;
                     obstacles[i].passed = true;
                     document.getElementById('current-score').innerText = score;
                 }

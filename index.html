@@ -624,6 +624,7 @@
         const DAILY_AD_LIMIT = 5;
 
         const tg = window.Telegram?.WebApp;
+        const telegramInitData = tg?.initData || "";
 
         if (tg) {
             tg.ready();
@@ -653,8 +654,8 @@
         const telegramUser = tg?.initDataUnsafe?.user;
 
         let userData = {
-            telegram_id: telegramUser?.id || 123456789,
-            username: telegramUser?.username || "pilot",
+            telegram_id: telegramUser?.id || 0,
+            username: telegramUser?.username || "",
             first_name: telegramUser?.first_name || "Пилот",
             weekly_score: 0,
             game_attempts: 0,
@@ -671,6 +672,17 @@
         let gameStartInProgress = false;
 
         async function syncUser() {
+            if (!telegramInitData) {
+                document.getElementById("user-name").innerText = "Откройте через Telegram";
+                document.getElementById("btn-ad").disabled = true;
+
+                const playButton = document.querySelector(".btn-play");
+                if (playButton) playButton.disabled = true;
+
+                showAlert("Для безопасного входа откройте ADP Flight League через кнопку бота в Telegram.");
+                return false;
+            }
+
             try {
                 const response = await fetch(`${API_URL}/api/user/sync`, {
                     method: "POST",
@@ -678,15 +690,21 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        telegram_id: userData.telegram_id,
-                        username: userData.username,
-                        first_name: userData.first_name
+                        init_data: telegramInitData
                     })
                 });
 
                 const data = await response.json();
 
+                if (!response.ok) {
+                    throw new Error(data.detail || "Telegram-авторизация не прошла проверку.");
+                }
+
                 if (data.status === "ok") {
+                    // Эти данные уже проверены сервером по подписи Telegram.
+                    userData.telegram_id = Number(data.user.telegram_id || 0);
+                    userData.username = data.user.username || "";
+                    userData.first_name = data.user.first_name || "Пилот";
                     userData.weekly_score = Number(data.user.weekly_score || 0);
                     userData.game_attempts = Number(data.user.game_attempts || 0);
                     userData.daily_ads_count = Number(data.user.daily_ads_count || 0);
@@ -695,10 +713,14 @@
 
                     updateUI();
                     startAdCooldownTimer();
+                    return true;
                 }
             } catch (error) {
-                console.error("Ошибка синхронизации:", error);
+                console.error("Ошибка Telegram-авторизации:", error);
+                showAlert(error.message || "Не удалось подтвердить вход через Telegram.");
             }
+
+            return false;
         }
 
         function updateUI() {
@@ -784,13 +806,16 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        telegram_id: userData.telegram_id,
-                        username: userData.username,
-                        first_name: userData.first_name
+                        init_data: telegramInitData
                     })
                 });
 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.detail || "Telegram-авторизация не прошла проверку.");
+                    return;
+                }
 
                 if (data.success) {
                     userData.game_attempts = Number(data.game_attempts || 0);
@@ -1015,13 +1040,16 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        telegram_id: userData.telegram_id,
-                        username: userData.username,
-                        first_name: userData.first_name
+                        init_data: telegramInitData
                     })
                 });
 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.detail || "Telegram-авторизация не прошла проверку.");
+                    return;
+                }
 
                 if (!data.success) {
                     if (data.game_attempts !== undefined) {
@@ -1480,13 +1508,18 @@
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        telegram_id: userData.telegram_id,
+                        init_data: telegramInitData,
                         score: score,
                         session_id: sessionId
                     })
                 });
 
                 const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.detail || "Telegram-авторизация не прошла проверку.");
+                    return;
+                }
 
                 // Эта сессия больше не должна использоваться повторно.
                 activeGameSessionId = null;
@@ -1517,6 +1550,7 @@
            СТАРТ ПРИЛОЖЕНИЯ
            ========================================================= */
 
+        // При старте сервер обязательно проверяет подпись Telegram initData.
         syncUser();
     </script>
 </body>

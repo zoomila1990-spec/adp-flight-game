@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
+    <!-- v6: referrals + first-ad activation -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
@@ -303,6 +304,115 @@
            ИГРОВОЙ ЭКРАН
            --------------------------------------------------------- */
 
+
+        /* =========================================================
+           РЕФЕРАЛЬНОЕ ОКНО v6
+           ========================================================= */
+
+        .referral-hero {
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.12), rgba(56, 189, 248, 0.08));
+            border: 1px solid rgba(0, 255, 204, 0.22);
+            border-radius: 16px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .referral-hero-title {
+            color: var(--accent-green);
+            font-size: 17px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .referral-hero-text {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .referral-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .referral-stat {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 6px;
+            text-align: center;
+        }
+
+        .referral-stat-value {
+            display: block;
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .referral-stat-label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 10px;
+            line-height: 1.25;
+        }
+
+        .referral-link-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 10px 12px;
+        }
+
+        .referral-link-label {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-bottom: 6px;
+        }
+
+        .referral-link-value {
+            color: #ffffff;
+            font-size: 12px;
+            line-height: 1.4;
+            word-break: break-all;
+            user-select: text;
+        }
+
+        .referral-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .referral-action-btn {
+            border: none;
+            border-radius: 14px;
+            padding: 12px 10px;
+            font-size: 13px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .referral-share-btn {
+            background: linear-gradient(135deg, #00ffcc, #00b894);
+            color: #0d1117;
+        }
+
+        .referral-copy-btn {
+            background: rgba(59, 130, 246, 0.18);
+            border: 1px solid rgba(59, 130, 246, 0.35);
+            color: #bfdbfe;
+        }
+
+        .referral-note {
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.45;
+            text-align: center;
+        }
+
         #game-screen {
             display: none;
             position: fixed;
@@ -574,6 +684,66 @@
         </div>
     </div>
 
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: РЕФЕРАЛЫ
+         ========================================================= -->
+    <div class="modal" id="modal-referral">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👥 Пригласить друзей</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="referral-hero">
+                    <div class="referral-hero-title">+10 ADP каждому</div>
+                    <div class="referral-hero-text">
+                        Отправьте свою ссылку другу. После его первой успешно подтверждённой рекламы
+                        вы получите +10 ADP, и ваш друг тоже получит +10 ADP.
+                    </div>
+                </div>
+
+                <div class="referral-stats">
+                    <div class="referral-stat">
+                        <span class="referral-stat-value" id="ref-total">0</span>
+                        <span class="referral-stat-label">Приглашено</span>
+                    </div>
+
+                    <div class="referral-stat">
+                        <span class="referral-stat-value" id="ref-activated">0</span>
+                        <span class="referral-stat-label">Активировано</span>
+                    </div>
+
+                    <div class="referral-stat">
+                        <span class="referral-stat-value" id="ref-earned">0</span>
+                        <span class="referral-stat-label">Заработано ADP</span>
+                    </div>
+                </div>
+
+                <div class="referral-link-box">
+                    <div class="referral-link-label">Ваша персональная ссылка</div>
+                    <div class="referral-link-value" id="ref-link">Загрузка...</div>
+                </div>
+
+                <div class="referral-actions">
+                    <button class="referral-action-btn referral-share-btn" onclick="shareReferral()">
+                        📤 Поделиться
+                    </button>
+
+                    <button class="referral-action-btn referral-copy-btn" onclick="copyReferral()">
+                        📋 Копировать
+                    </button>
+                </div>
+
+                <div class="referral-note">
+                    Одна ссылка может использоваться любым количеством новых пользователей.
+                    Бонус начисляется один раз за каждого нового друга после его первой успешной рекламы.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- =========================================================
          ИГРОВОЙ ЭКРАН
          ========================================================= -->
@@ -661,7 +831,16 @@
             game_attempts: 0,
             daily_ads_count: 0,
             last_ad_time: 0,
-            is_admin: false
+            is_admin: false,
+            referral: {
+                code: "",
+                link: "",
+                reward_per_side: 10,
+                total_invited: 0,
+                activated: 0,
+                pending: 0,
+                earned_adp: 0
+            }
         };
 
         let adTimerInterval = null;
@@ -710,6 +889,7 @@
                     userData.daily_ads_count = Number(data.user.daily_ads_count || 0);
                     userData.last_ad_time = Number(data.user.last_ad_time || 0);
                     userData.is_admin = Boolean(data.user.is_admin);
+                    applyReferralData(data.referral);
 
                     updateUI();
                     startAdCooldownTimer();
@@ -734,6 +914,55 @@
             } else {
                 attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/${DAILY_AD_LIMIT})`;
             }
+        }
+
+
+        function applyReferralData(referral) {
+            if (!referral) return;
+
+            userData.referral = {
+                code: referral.code || "",
+                link: referral.link || "",
+                reward_per_side: Number(referral.reward_per_side || 10),
+                total_invited: Number(referral.total_invited || 0),
+                activated: Number(referral.activated || 0),
+                pending: Number(referral.pending || 0),
+                earned_adp: Number(referral.earned_adp || 0)
+            };
+        }
+
+        function renderReferralModal() {
+            const referral = userData.referral || {};
+
+            document.getElementById("ref-total").innerText = Number(referral.total_invited || 0);
+            document.getElementById("ref-activated").innerText = Number(referral.activated || 0);
+            document.getElementById("ref-earned").innerText = Number(referral.earned_adp || 0);
+            document.getElementById("ref-link").innerText = referral.link || "Ссылка пока недоступна";
+        }
+
+        async function loadReferralData() {
+            const response = await fetch(`${API_URL}/api/user/referrals`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    init_data: telegramInitData
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Не удалось загрузить реферальные данные.");
+            }
+
+            if (!data.success) {
+                throw new Error(data.reason || "Не удалось загрузить реферальные данные.");
+            }
+
+            applyReferralData(data.referral);
+            renderReferralModal();
         }
 
         /* =========================================================
@@ -823,12 +1052,19 @@
                     userData.daily_ads_count = Number(data.daily_ads_count || 0);
                     userData.last_ad_time = Number(data.last_ad_time || 0);
                     userData.is_admin = Boolean(data.is_admin || userData.is_admin);
+                    applyReferralData(data.referral);
 
                     updateUI();
                     startAdCooldownTimer();
                     haptic("medium");
 
-                    showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
+                    if (data.referral_activated) {
+                        showAlert(
+                            `Реклама просмотрена! +50 ADP и 1 попытка. 🎁 Реферальный бонус: ещё +${Number(data.referral_bonus || 10)} ADP. Ваш пригласивший тоже получил +${Number(data.inviter_bonus || 10)} ADP.`
+                        );
+                    } else {
+                        showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
+                    }
                 } else {
                     showAlert(data.reason || "Таймер не истек или лимит исчерпан.");
                 }
@@ -908,23 +1144,67 @@
         function closeModals() {
             document.getElementById("modal-leaderboard").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
+            document.getElementById("modal-referral").style.display = "none";
         }
 
         /* =========================================================
            РЕФЕРАЛЫ И КОШЕЛЕК
            ========================================================= */
 
-        function openReferral() {
+        async function openReferral() {
             haptic("light");
 
-            const botLink = `https://t.me/${BOT_USERNAME}?start=ref_${userData.telegram_id}`;
-            const shareText = "Присоединяйся к ADP Flight League! ✈️";
-            const shareLink = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(shareText)}`;
+            document.getElementById("modal-referral").style.display = "flex";
+            document.getElementById("ref-link").innerText = "Загрузка...";
+
+            try {
+                await loadReferralData();
+            } catch (error) {
+                console.error("Ошибка реферальной системы:", error);
+                document.getElementById("ref-link").innerText = "Не удалось загрузить ссылку";
+                showAlert(error.message || "Не удалось загрузить реферальную ссылку.");
+            }
+        }
+
+        function shareReferral() {
+            haptic("light");
+
+            const referralLink = userData.referral?.link || "";
+
+            if (!referralLink) {
+                showAlert("Реферальная ссылка пока не загружена.");
+                return;
+            }
+
+            const shareText =
+                "Присоединяйся к ADP Flight League! ✈️ После первой успешной рекламы мы оба получим по 10 ADP.";
+
+            const telegramShareLink =
+                `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`;
 
             if (tg?.openTelegramLink) {
-                tg.openTelegramLink(shareLink);
+                tg.openTelegramLink(telegramShareLink);
             } else {
-                window.open(shareLink, "_blank");
+                window.open(telegramShareLink, "_blank");
+            }
+        }
+
+        async function copyReferral() {
+            haptic("light");
+
+            const referralLink = userData.referral?.link || "";
+
+            if (!referralLink) {
+                showAlert("Реферальная ссылка пока не загружена.");
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(referralLink);
+                showAlert("Реферальная ссылка скопирована.");
+            } catch (error) {
+                console.error("Не удалось скопировать ссылку:", error);
+                showAlert("Не удалось автоматически скопировать ссылку. Зажмите ссылку и скопируйте её вручную.");
             }
         }
 

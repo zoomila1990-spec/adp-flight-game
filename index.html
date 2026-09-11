@@ -924,6 +924,7 @@
         let lastFrameTime = 0;
         let score = 0;
         let gameSpeedMultiplier = 1;
+        let elapsedGameTime = 0;
         let spawnTimer = 0;
         let nextSpawnDelay = 700;
         let obstacles = [];
@@ -934,7 +935,10 @@
             width: 54,
             height: 62,
             targetX: GAME_WIDTH / 2 - 27,
-            followSpeed: 9,
+            vx: 0,
+            maxHorizontalSpeed: 360,
+            horizontalAcceleration: 1250,
+            arrivalGain: 4.8,
             tilt: 0
         };
 
@@ -1006,6 +1010,7 @@
 
             score = 0;
             gameSpeedMultiplier = 1;
+            elapsedGameTime = 0;
             obstacles = [];
             spawnTimer = 0;
             nextSpawnDelay = randomBetween(650, 1050);
@@ -1013,6 +1018,7 @@
             plane.x = GAME_WIDTH / 2 - plane.width / 2;
             plane.targetX = plane.x;
             plane.y = GAME_HEIGHT - 95;
+            plane.vx = 0;
             plane.tilt = 0;
 
             slider.value = GAME_WIDTH / 2;
@@ -1042,24 +1048,59 @@
         }
 
         function updateGame(deltaSeconds) {
-            gameSpeedMultiplier = Math.min(1 + score * 0.045, 2.8);
+            elapsedGameTime += deltaSeconds;
+
+            // Сложность растет не только от счета, но и понемногу от времени в полете.
+            // Первые секунды остаются дружелюбными, а хороший рекорд требует реакции.
+            gameSpeedMultiplier = Math.min(
+                1 + score * 0.065 + elapsedGameTime * 0.008,
+                4.5
+            );
             document.getElementById("current-speed-level").innerText = `x${gameSpeedMultiplier.toFixed(1)}`;
 
+            // ИНЕРЦИЯ САМОЛЕТА.
+            // Ползунок задает желаемую позицию, но самолет не телепортируется к ней:
+            // он набирает боковую скорость, затем плавно тормозит перед целью.
             const dx = plane.targetX - plane.x;
-            plane.x += dx * Math.min(plane.followSpeed * deltaSeconds, 1);
-            plane.x = clamp(plane.x, 0, GAME_WIDTH - plane.width);
+            const desiredVx = clamp(
+                dx * plane.arrivalGain,
+                -plane.maxHorizontalSpeed,
+                plane.maxHorizontalSpeed
+            );
 
-            const targetTilt = clamp(dx * 0.022, -0.55, 0.55);
-            plane.tilt += (targetTilt - plane.tilt) * Math.min(10 * deltaSeconds, 1);
+            const maxVelocityChange = plane.horizontalAcceleration * deltaSeconds;
+            const velocityError = desiredVx - plane.vx;
+            plane.vx += clamp(velocityError, -maxVelocityChange, maxVelocityChange);
+            plane.x += plane.vx * deltaSeconds;
+
+            if (plane.x <= 0) {
+                plane.x = 0;
+                if (plane.vx < 0) plane.vx = 0;
+            }
+
+            if (plane.x >= GAME_WIDTH - plane.width) {
+                plane.x = GAME_WIDTH - plane.width;
+                if (plane.vx > 0) plane.vx = 0;
+            }
+
+            // Крен теперь зависит от реальной скорости маневра, а не только от положения ползунка.
+            const targetTilt = clamp(
+                (plane.vx / plane.maxHorizontalSpeed) * 0.62,
+                -0.62,
+                0.62
+            );
+            plane.tilt += (targetTilt - plane.tilt) * Math.min(6.5 * deltaSeconds, 1);
 
             spawnTimer += deltaSeconds * 1000;
 
             if (spawnTimer >= nextSpawnDelay) {
-                spawnObstacle();
+                spawnChallenge();
                 spawnTimer = 0;
 
-                const speedFactor = Math.max(0.72, 1 / gameSpeedMultiplier);
-                nextSpawnDelay = randomBetween(620, 1080) * speedFactor;
+                const difficulty = getDifficultyProgress();
+                const minDelay = 720 - difficulty * 330;
+                const maxDelay = 1050 - difficulty * 410;
+                nextSpawnDelay = randomBetween(minDelay, maxDelay);
             }
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
@@ -1096,7 +1137,27 @@
             }
         }
 
-        function spawnObstacle() {
+        function getDifficultyProgress() {
+            return clamp((gameSpeedMultiplier - 1) / 3.5, 0, 1);
+        }
+
+        function spawnChallenge() {
+            const difficulty = getDifficultyProgress();
+
+            // После разогрева иногда появляются два объекта одновременно.
+            // Вероятность растет постепенно, поэтому начало игры не становится резким.
+            const formationChance = score < 10
+                ? 0
+                : Math.min(0.36, 0.10 + difficulty * 0.30);
+
+            if (Math.random() < formationChance) {
+                spawnObstacleFormation(difficulty);
+            } else {
+                spawnObstacle(difficulty);
+            }
+        }
+
+        function createObstacle(difficulty, forcedX = null, yOffset = 0) {
             const types = ["meteor", "bird", "cloud"];
             const type = types[Math.floor(Math.random() * types.length)];
 
@@ -1106,32 +1167,69 @@
             let drift;
 
             if (type === "meteor") {
-                width = randomBetween(34, 52);
+                width = randomBetween(34, 52 + difficulty * 8);
                 height = width;
                 speed = randomBetween(145, 205);
                 drift = randomBetween(-22, 22);
             } else if (type === "bird") {
-                width = randomBetween(44, 62);
+                width = randomBetween(44, 62 + difficulty * 8);
                 height = randomBetween(24, 34);
                 speed = randomBetween(160, 220);
                 drift = randomBetween(-42, 42);
             } else {
-                width = randomBetween(58, 88);
+                width = randomBetween(58, 88 + difficulty * 10);
                 height = randomBetween(34, 48);
                 speed = randomBetween(125, 175);
                 drift = randomBetween(-14, 14);
             }
 
-            obstacles.push({
+            // На высокой сложности часть препятствий сильнее смещается в стороны.
+            drift *= 1 + difficulty * 1.15;
+
+            const x = forcedX === null
+                ? randomBetween(4, GAME_WIDTH - width - 4)
+                : clamp(forcedX, 4, GAME_WIDTH - width - 4);
+
+            return {
                 type,
-                x: randomBetween(4, GAME_WIDTH - width - 4),
-                y: -height - 20,
+                x,
+                y: -height - 20 + yOffset,
                 width,
                 height,
                 speed,
                 drift,
                 passed: false
-            });
+            };
+        }
+
+        function spawnObstacle(difficulty = getDifficultyProgress()) {
+            obstacles.push(createObstacle(difficulty));
+        }
+
+        function spawnObstacleFormation(difficulty) {
+            // Два объекта на близкой высоте заставляют заранее выбрать траекторию,
+            // но сохраняют достаточно места для честного маневра.
+            const first = createObstacle(difficulty);
+            const second = createObstacle(difficulty);
+
+            const minimumGap = 118 - difficulty * 18;
+            let attempts = 0;
+
+            do {
+                second.x = randomBetween(4, GAME_WIDTH - second.width - 4);
+                attempts += 1;
+            } while (
+                attempts < 20 &&
+                Math.abs(
+                    (second.x + second.width / 2) -
+                    (first.x + first.width / 2)
+                ) < minimumGap
+            );
+
+            // Небольшой вертикальный разнос делает формацию визуально естественнее.
+            second.y -= randomBetween(8, 28);
+
+            obstacles.push(first, second);
         }
 
         function checkCollision(player, obstacle) {

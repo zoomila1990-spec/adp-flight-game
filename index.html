@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v7: AdsGram rewarded test integration, BlockID 47421 -->
+    <!-- v8: AdsGram test + TON Connect wallet -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
     <style>
         :root {
@@ -635,8 +636,8 @@
                     👥 Рефералы (+10 ADP)
                 </button>
 
-                <button class="btn btn-secondary" onclick="connectWallet()">
-                    👛 Кошелек
+                <button class="btn btn-secondary" id="btn-wallet" onclick="connectWallet()">
+                    👛 Подключить TON
                 </button>
             </div>
         </div>
@@ -799,6 +800,9 @@
         const ADSGRAM_BLOCK_ID = "47421";
         const ADSGRAM_DEBUG = true;
 
+        const TONCONNECT_MANIFEST_URL =
+            "https://zoomila1990-spec.github.io/adp-flight-game/tonconnect-manifest.json";
+
         const tg = window.Telegram?.WebApp;
         const telegramInitData = tg?.initData || "";
 
@@ -838,6 +842,10 @@
             daily_ads_count: 0,
             last_ad_time: 0,
             is_admin: false,
+            ton_wallet_address: "",
+            ton_wallet_chain: "",
+            ton_wallet_app: "",
+            ton_wallet_updated_at: 0,
             referral: {
                 code: "",
                 link: "",
@@ -852,6 +860,10 @@
         let adTimerInterval = null;
         let adsgramController = null;
         let adShowInProgress = false;
+
+        let tonConnectUI = null;
+        let tonConnectionRestored = false;
+        let tonWalletSyncInProgress = false;
 
         function getAdsgramController() {
             if (adsgramController) {
@@ -916,6 +928,10 @@
                     userData.daily_ads_count = Number(data.user.daily_ads_count || 0);
                     userData.last_ad_time = Number(data.user.last_ad_time || 0);
                     userData.is_admin = Boolean(data.user.is_admin);
+                    userData.ton_wallet_address = data.user.ton_wallet_address || "";
+                    userData.ton_wallet_chain = data.user.ton_wallet_chain || "";
+                    userData.ton_wallet_app = data.user.ton_wallet_app || "";
+                    userData.ton_wallet_updated_at = Number(data.user.ton_wallet_updated_at || 0);
                     applyReferralData(data.referral);
 
                     updateUI();
@@ -941,6 +957,40 @@
             } else {
                 attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/${DAILY_AD_LIMIT})`;
             }
+
+            updateWalletButton();
+        }
+
+        function shortenTonAddress(address) {
+            const value = String(address || "");
+            if (value.length <= 14) return value;
+            return `${value.slice(0, 6)}…${value.slice(-4)}`;
+        }
+
+        function updateWalletButton() {
+            const btn = document.getElementById("btn-wallet");
+            if (!btn) return;
+
+            if (tonConnectUI?.connected && tonConnectUI?.account?.address) {
+                let address = userData.ton_wallet_address || "";
+                try {
+                    address = window.TON_CONNECT_UI.toUserFriendlyAddress(
+                        tonConnectUI.account.address
+                    );
+                } catch (error) {
+                    // Если форматирование не удалось, используем сохранённый адрес.
+                }
+
+                btn.innerHTML = `👛 ${shortenTonAddress(address || "TON подключен")}`;
+                return;
+            }
+
+            if (userData.ton_wallet_address) {
+                btn.innerHTML = `👛 ${shortenTonAddress(userData.ton_wallet_address)}`;
+                return;
+            }
+
+            btn.innerHTML = "👛 Подключить TON";
         }
 
 
@@ -1279,9 +1329,231 @@
             }
         }
 
-        function connectWallet() {
+        async function saveTonWalletOnServer(wallet) {
+            if (!telegramInitData || !wallet?.account?.address) {
+                return false;
+            }
+
+            const chain = String(wallet.account.chain || "");
+
+            if (chain !== "-239") {
+                showAlert("Для будущих выплат ADP Flight League нужен TON Mainnet кошелёк.");
+                return false;
+            }
+
+            let friendlyAddress;
+
+            try {
+                friendlyAddress = window.TON_CONNECT_UI.toUserFriendlyAddress(
+                    wallet.account.address
+                );
+            } catch (error) {
+                console.error("Не удалось преобразовать TON адрес:", error);
+                showAlert("Не удалось прочитать адрес TON-кошелька.");
+                return false;
+            }
+
+            if (
+                tonWalletSyncInProgress ||
+                (
+                    userData.ton_wallet_address === friendlyAddress &&
+                    userData.ton_wallet_chain === chain
+                )
+            ) {
+                updateWalletButton();
+                return true;
+            }
+
+            tonWalletSyncInProgress = true;
+
+            try {
+                const walletApp =
+                    wallet.device?.appName ||
+                    wallet.name ||
+                    "TON Wallet";
+
+                const response = await fetch(`${API_URL}/api/user/wallet`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData,
+                        wallet_address: friendlyAddress,
+                        wallet_chain: chain,
+                        wallet_app: walletApp
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Сервер не сохранил TON-кошелёк.");
+                }
+
+                if (!data.success) {
+                    throw new Error(data.reason || "Сервер не сохранил TON-кошелёк.");
+                }
+
+                userData.ton_wallet_address = data.wallet_address || friendlyAddress;
+                userData.ton_wallet_chain = data.wallet_chain || chain;
+                userData.ton_wallet_app = data.wallet_app || walletApp;
+                userData.ton_wallet_updated_at = Number(data.wallet_updated_at || 0);
+
+                updateWalletButton();
+                haptic("medium");
+                showAlert(
+                    `TON-кошелёк подключён и сохранён:\n${shortenTonAddress(userData.ton_wallet_address)}`
+                );
+
+                return true;
+
+            } catch (error) {
+                console.error("Ошибка сохранения TON-кошелька:", error);
+                showAlert(error.message || "Не удалось сохранить TON-кошелёк.");
+                return false;
+
+            } finally {
+                tonWalletSyncInProgress = false;
+            }
+        }
+
+        async function removeTonWalletOnServer() {
+            if (!telegramInitData) return false;
+
+            const response = await fetch(`${API_URL}/api/user/wallet/remove`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    init_data: telegramInitData
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Сервер не удалил TON-кошелёк.");
+            }
+
+            if (!data.success) {
+                throw new Error(data.reason || "Сервер не удалил TON-кошелёк.");
+            }
+
+            userData.ton_wallet_address = "";
+            userData.ton_wallet_chain = "";
+            userData.ton_wallet_app = "";
+            userData.ton_wallet_updated_at = 0;
+            updateWalletButton();
+
+            return true;
+        }
+
+        function askConfirm(message) {
+            return new Promise((resolve) => {
+                if (tg?.showConfirm) {
+                    tg.showConfirm(message, (confirmed) => resolve(Boolean(confirmed)));
+                    return;
+                }
+
+                resolve(window.confirm(message));
+            });
+        }
+
+        function initTonConnect() {
+            if (!window.TON_CONNECT_UI) {
+                console.error("TON Connect UI SDK не загрузился.");
+                return;
+            }
+
+            try {
+                tonConnectUI = new window.TON_CONNECT_UI.TonConnectUI({
+                    manifestUrl: TONCONNECT_MANIFEST_URL,
+                    restoreConnection: true
+                });
+
+                tonConnectUI.uiOptions = {
+                    language: "ru",
+                    uiPreferences: {
+                        theme: window.TON_CONNECT_UI.THEME.DARK
+                    }
+                };
+
+                tonConnectUI.onStatusChange(
+                    async (wallet) => {
+                        updateWalletButton();
+
+                        if (wallet) {
+                            await saveTonWalletOnServer(wallet);
+                        }
+                    },
+                    (error) => {
+                        console.error("TON Connect status error:", error);
+                    }
+                );
+
+                tonConnectUI.connectionRestored
+                    .then(() => {
+                        tonConnectionRestored = true;
+                        updateWalletButton();
+                    })
+                    .catch((error) => {
+                        tonConnectionRestored = true;
+                        console.error("Не удалось восстановить TON Connect:", error);
+                        updateWalletButton();
+                    });
+
+            } catch (error) {
+                console.error("Ошибка запуска TON Connect:", error);
+            }
+        }
+
+        async function connectWallet() {
             haptic("light");
-            showAlert("Интеграция TON Connect будет подключена на следующем этапе.");
+
+            if (!telegramInitData) {
+                showAlert("Откройте ADP Flight League через Telegram, чтобы подключить кошелёк.");
+                return;
+            }
+
+            if (!tonConnectUI) {
+                showAlert("TON Connect пока не загрузился. Закройте Mini App и откройте снова.");
+                return;
+            }
+
+            try {
+                if (!tonConnectionRestored) {
+                    await tonConnectUI.connectionRestored;
+                    tonConnectionRestored = true;
+                }
+
+                if (tonConnectUI.connected) {
+                    const currentAddress =
+                        userData.ton_wallet_address ||
+                        "подключённый TON-кошелёк";
+
+                    const confirmed = await askConfirm(
+                        `Сейчас подключён ${shortenTonAddress(currentAddress)}.\n\nОтключить этот кошелёк?`
+                    );
+
+                    if (!confirmed) {
+                        return;
+                    }
+
+                    await tonConnectUI.disconnect();
+                    await removeTonWalletOnServer();
+                    haptic("medium");
+                    showAlert("TON-кошелёк отключён.");
+                    return;
+                }
+
+                await tonConnectUI.openModal();
+
+            } catch (error) {
+                console.error("Ошибка TON Connect:", error);
+                showAlert(error.message || "Не удалось открыть TON Connect.");
+            }
         }
 
         /* =========================================================
@@ -1939,6 +2211,9 @@
         /* =========================================================
            СТАРТ ПРИЛОЖЕНИЯ
            ========================================================= */
+
+        // TON Connect восстанавливает ранее подключённый кошелёк, если сессия сохранилась.
+        initTonConnect();
 
         // При старте сервер обязательно проверяет подпись Telegram initData.
         syncUser();

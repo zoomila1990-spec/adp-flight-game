@@ -934,7 +934,7 @@
         }
 
         /* =========================================================
-           ИГРА: ВИД СВЕРХ + ГОРИЗОНТАЛЬНЫЙ ШТУРВАЛ
+           ИГРА v5: ВИД СВЕРХ + ГОРИЗОНТАЛЬНЫЙ ШТУРВАЛ + АНТИЧИТ
            ========================================================= */
 
         const canvas = document.getElementById("gameCanvas");
@@ -955,6 +955,13 @@
         let score = 0;
         let gameSpeedMultiplier = 1;
         let elapsedGameTime = 0;
+
+        // Телеметрия Anti-Cheat v5.
+        // Сервер сравнивает эти данные со временем своей игровой сессии.
+        let flightStartedAtMs = 0;
+        let frameCount = 0;
+        let maxSpeedMultiplierReached = 1;
+
         let spawnTimer = 0;
         let nextSpawnDelay = 700;
         let obstacles = [];
@@ -1086,6 +1093,12 @@
             score = 0;
             gameSpeedMultiplier = 1;
             elapsedGameTime = 0;
+
+            // Начинаем измерять реальную продолжительность именно этого полёта.
+            flightStartedAtMs = performance.now();
+            frameCount = 0;
+            maxSpeedMultiplierReached = 1;
+
             obstacles = [];
             spawnTimer = 0;
             nextSpawnDelay = randomBetween(650, 1050);
@@ -1111,6 +1124,9 @@
                 return;
             }
 
+            // Считаем реально обработанные кадры для серверной проверки.
+            frameCount += 1;
+
             const deltaSeconds = Math.min((timestamp - lastFrameTime) / 1000, 0.035);
             lastFrameTime = timestamp;
 
@@ -1131,6 +1147,13 @@
                 1 + score * 0.065 + elapsedGameTime * 0.008,
                 4.5
             );
+
+            // Запоминаем максимальную сложность, достигнутую за этот полёт.
+            maxSpeedMultiplierReached = Math.max(
+                maxSpeedMultiplierReached,
+                gameSpeedMultiplier
+            );
+
             document.getElementById("current-speed-level").innerText = `x${gameSpeedMultiplier.toFixed(1)}`;
 
             // ИНЕРЦИЯ САМОЛЕТА.
@@ -1495,6 +1518,18 @@
 
             const sessionId = activeGameSessionId;
 
+            // Замораживаем телеметрию до сетевого запроса, чтобы время HTTP-запроса
+            // не попадало в продолжительность самого полёта.
+            const flightDurationMs = Math.max(
+                1,
+                Math.round(performance.now() - flightStartedAtMs)
+            );
+            const finalFrameCount = Math.max(1, frameCount);
+            const finalMaxSpeedMultiplier = Math.max(
+                1,
+                maxSpeedMultiplierReached
+            );
+
             if (!sessionId) {
                 showAlert("Не найдена игровая сессия. Результат не будет начислен.");
                 await syncUser();
@@ -1510,7 +1545,11 @@
                     body: JSON.stringify({
                         init_data: telegramInitData,
                         score: score,
-                        session_id: sessionId
+                        session_id: sessionId,
+                        flight_duration_ms: flightDurationMs,
+                        frame_count: finalFrameCount,
+                        max_speed_multiplier: Number(finalMaxSpeedMultiplier.toFixed(3)),
+                        finish_reason: reason
                     })
                 });
 

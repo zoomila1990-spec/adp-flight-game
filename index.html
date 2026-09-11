@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v6: referrals + first-ad activation -->
+    <!-- v7: AdsGram rewarded test integration, BlockID 47421 -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
     <style>
         :root {
@@ -793,6 +794,11 @@
         const AD_COOLDOWN_SECONDS = 30 * 60;
         const DAILY_AD_LIMIT = 5;
 
+        // AdsGram Rewarded test block.
+        // DEBUG обязательно отключим перед реальным запуском.
+        const ADSGRAM_BLOCK_ID = "47421";
+        const ADSGRAM_DEBUG = true;
+
         const tg = window.Telegram?.WebApp;
         const telegramInitData = tg?.initData || "";
 
@@ -844,6 +850,27 @@
         };
 
         let adTimerInterval = null;
+        let adsgramController = null;
+        let adShowInProgress = false;
+
+        function getAdsgramController() {
+            if (adsgramController) {
+                return adsgramController;
+            }
+
+            if (!window.Adsgram) {
+                throw new Error("AdsGram SDK не загрузился.");
+            }
+
+            adsgramController = window.Adsgram.init({
+                blockId: ADSGRAM_BLOCK_ID,
+                debug: ADSGRAM_DEBUG,
+                debugConsole: true,
+                debugBannerType: "RewardedVideo"
+            });
+
+            return adsgramController;
+        }
 
         // Защищённая игровая сессия. Сервер создаёт её до начала полёта
         // и списывает попытку именно в момент старта.
@@ -974,7 +1001,7 @@
 
             if (userData.is_admin) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "🧪 Тестовая реклама (+50 ADP)";
+                btnAd.innerHTML = "📺 Тестовая AdsGram (+50 ADP)";
                 return false;
             }
 
@@ -1025,52 +1052,96 @@
             }, 1000);
         }
 
+        async function grantAdRewardOnServer() {
+            const response = await fetch(`${API_URL}/api/user/watch-ad`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    init_data: telegramInitData
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(
+                    data.detail || "Telegram-авторизация не прошла проверку."
+                );
+            }
+
+            if (!data.success) {
+                throw new Error(
+                    data.reason || "Сервер не подтвердил рекламную награду."
+                );
+            }
+
+            return data;
+        }
+
         async function watchAd() {
+            if (adShowInProgress) {
+                return;
+            }
+
             haptic("light");
 
+            const btnAd = document.getElementById("btn-ad");
+
             try {
-                const response = await fetch(`${API_URL}/api/user/watch-ad`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        init_data: telegramInitData
-                    })
-                });
+                adShowInProgress = true;
+                btnAd.disabled = true;
+                btnAd.innerHTML = "⏳ Загружаем рекламу...";
 
-                const data = await response.json();
+                const controller = getAdsgramController();
 
-                if (!response.ok) {
-                    showAlert(data.detail || "Telegram-авторизация не прошла проверку.");
-                    return;
-                }
+                // Для Rewarded формата AdsGram Promise завершается успешно
+                // только после полного просмотра рекламы.
+                await controller.show();
 
-                if (data.success) {
-                    userData.game_attempts = Number(data.game_attempts || 0);
-                    userData.weekly_score = Number(data.weekly_score || 0);
-                    userData.daily_ads_count = Number(data.daily_ads_count || 0);
-                    userData.last_ad_time = Number(data.last_ad_time || 0);
-                    userData.is_admin = Boolean(data.is_admin || userData.is_admin);
-                    applyReferralData(data.referral);
+                btnAd.innerHTML = "✅ Реклама просмотрена. Начисляем награду...";
 
-                    updateUI();
-                    startAdCooldownTimer();
-                    haptic("medium");
+                // Только ПОСЛЕ успешного полного просмотра просим сервер
+                // начислить +50 ADP, попытку и при необходимости реферальный бонус.
+                const data = await grantAdRewardOnServer();
 
-                    if (data.referral_activated) {
-                        showAlert(
-                            `Реклама просмотрена! +50 ADP и 1 попытка. 🎁 Реферальный бонус: ещё +${Number(data.referral_bonus || 10)} ADP. Ваш пригласивший тоже получил +${Number(data.inviter_bonus || 10)} ADP.`
-                        );
-                    } else {
-                        showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
-                    }
+                userData.game_attempts = Number(data.game_attempts || 0);
+                userData.weekly_score = Number(data.weekly_score || 0);
+                userData.daily_ads_count = Number(data.daily_ads_count || 0);
+                userData.last_ad_time = Number(data.last_ad_time || 0);
+                userData.is_admin = Boolean(data.is_admin || userData.is_admin);
+                applyReferralData(data.referral);
+
+                updateUI();
+                haptic("medium");
+
+                if (data.referral_activated) {
+                    showAlert(
+                        `Реклама просмотрена до конца! +50 ADP и 1 попытка. 🎁 Реферальный бонус: ещё +${Number(data.referral_bonus || 10)} ADP. Ваш пригласивший тоже получил +${Number(data.inviter_bonus || 10)} ADP.`
+                    );
                 } else {
-                    showAlert(data.reason || "Таймер не истек или лимит исчерпан.");
+                    showAlert(
+                        "Реклама просмотрена до конца! Начислено +50 ADP и 1 попытка."
+                    );
                 }
+
             } catch (error) {
-                console.error("Ошибка рекламы:", error);
-                showAlert("Ошибка подключения к серверу.");
+                console.error("Ошибка AdsGram / рекламной награды:", error);
+
+                const message = String(
+                    error?.description ||
+                    error?.message ||
+                    "Реклама не была завершена."
+                );
+
+                showAlert(
+                    `Награда не начислена. ${message}`
+                );
+
+            } finally {
+                adShowInProgress = false;
+                startAdCooldownTimer();
             }
         }
 

@@ -665,6 +665,11 @@
 
         let adTimerInterval = null;
 
+        // Защищённая игровая сессия. Сервер создаёт её до начала полёта
+        // и списывает попытку именно в момент старта.
+        let activeGameSessionId = null;
+        let gameStartInProgress = false;
+
         async function syncUser() {
             try {
                 const response = await fetch(`${API_URL}/api/user/sync`, {
@@ -988,18 +993,60 @@
             return min + Math.random() * (max - min);
         }
 
-        function startGame() {
+        async function startGame() {
+            if (gameStartInProgress) {
+                return;
+            }
+
             if (userData.game_attempts <= 0) {
                 showAlert("У вас нет попыток! Посмотрите рекламу, чтобы получить попытку полета.");
                 return;
             }
 
+            gameStartInProgress = true;
             haptic("medium");
 
-            document.getElementById("main-menu").style.display = "none";
-            document.getElementById("game-screen").style.display = "flex";
+            try {
+                // ВАЖНО: сначала сервер подтверждает старт полёта,
+                // списывает одну попытку и создаёт уникальную сессию.
+                const response = await fetch(`${API_URL}/api/user/start-game`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        telegram_id: userData.telegram_id,
+                        username: userData.username,
+                        first_name: userData.first_name
+                    })
+                });
 
-            initCanvasGame();
+                const data = await response.json();
+
+                if (!data.success) {
+                    if (data.game_attempts !== undefined) {
+                        userData.game_attempts = Number(data.game_attempts || 0);
+                        updateUI();
+                    }
+
+                    showAlert(data.reason || "Не удалось начать полет.");
+                    return;
+                }
+
+                activeGameSessionId = data.session_id;
+                userData.game_attempts = Number(data.game_attempts || 0);
+                updateUI();
+
+                document.getElementById("main-menu").style.display = "none";
+                document.getElementById("game-screen").style.display = "flex";
+
+                initCanvasGame();
+            } catch (error) {
+                console.error("Ошибка старта игры:", error);
+                showAlert("Не удалось связаться с сервером. Попытка не запущена.");
+            } finally {
+                gameStartInProgress = false;
+            }
         }
 
         function initCanvasGame() {
@@ -1418,6 +1465,14 @@
             document.getElementById("game-screen").style.display = "none";
             document.getElementById("main-menu").style.display = "flex";
 
+            const sessionId = activeGameSessionId;
+
+            if (!sessionId) {
+                showAlert("Не найдена игровая сессия. Результат не будет начислен.");
+                await syncUser();
+                return;
+            }
+
             try {
                 const response = await fetch(`${API_URL}/api/user/finish-game`, {
                     method: "POST",
@@ -1426,11 +1481,15 @@
                     },
                     body: JSON.stringify({
                         telegram_id: userData.telegram_id,
-                        score: score
+                        score: score,
+                        session_id: sessionId
                     })
                 });
 
                 const data = await response.json();
+
+                // Эта сессия больше не должна использоваться повторно.
+                activeGameSessionId = null;
 
                 if (data.success) {
                     userData.weekly_score = Number(data.weekly_score || 0);
@@ -1438,13 +1497,18 @@
                     updateUI();
 
                     if (reason === "collision") {
-                        showAlert(`Полет завершен!\nЗаработано: ${score} ADP.`);
+                        showAlert(`Полет завершен!\nЗаработано: ${Number(data.earned_adp ?? score)} ADP.`);
                     }
                 } else {
-                    showAlert(data.reason || "Не удалось сохранить результат полета.");
+                    await syncUser();
+                    showAlert(data.reason || "Результат полета не прошёл проверку сервера.");
                 }
             } catch (error) {
                 console.error("Ошибка сохранения полета:", error);
+
+                // Сессия остаётся на сервере active и позже будет очищена автоматически.
+                // Баланс синхронизируем, чтобы интерфейс не показывал неверные данные.
+                await syncUser();
                 showAlert(`Полет завершен. Счет: ${score}. Сервер не сохранил результат.`);
             }
         }

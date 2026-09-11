@@ -286,8 +286,8 @@
         }
 
         canvas {
-            background: linear-gradient(to bottom, #38bdf8, #0284c7);
-            border-radius: 12px;
+            background: linear-gradient(to bottom, #0284c7, #0369a1);
+            border-radius: 16px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
     </style>
@@ -314,7 +314,6 @@
         </div>
 
         <div class="menu-grid">
-            <!-- КНОПКА РЕКЛАМЫ С ТАЙМЕРОМ -->
             <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
                 📺 Смотреть рекламу (+50 ADP)
             </button>
@@ -335,7 +334,7 @@
         </div>
     </div>
 
-    <!-- Модалки -->
+    <!-- Модальное окно: Топ-30 -->
     <div class="modal" id="modal-leaderboard">
         <div class="modal-content">
             <div class="modal-header">
@@ -348,6 +347,7 @@
         </div>
     </div>
 
+    <!-- Модальное окно: Правила -->
     <div class="modal" id="modal-rules">
         <div class="modal-content">
             <div class="modal-header">
@@ -367,6 +367,7 @@
         </div>
     </div>
 
+    <!-- Игровой экран -->
     <div id="game-screen">
         <div style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
             Очки: <span id="current-game-score">0</span>
@@ -425,11 +426,10 @@
             document.getElementById('attempts-text').innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/5)`;
         }
 
-        // Логика таймера обратного отсчета (30 минут = 1800 секунд)
         function startAdCooldownTimer() {
             if (adTimerInterval) clearInterval(adTimerInterval);
 
-            const cooldownTime = 30 * 60; // 30 минут в секундах
+            const cooldownTime = 30 * 60; // 30 минут
             const btnAd = document.getElementById('btn-ad');
 
             adTimerInterval = setInterval(() => {
@@ -467,7 +467,7 @@
                     userData.last_ad_time = data.last_ad_time;
                     updateUI();
                     startAdCooldownTimer();
-                    tg.showAlert("Реклама просмотрена! Начислено +50 ADP.");
+                    tg.showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
                 } else {
                     tg.showAlert(data.reason || "Таймер не истек или лимит исчерпан");
                 }
@@ -478,7 +478,7 @@
 
         function startGame() {
             if (userData.game_attempts <= 0) {
-                tg.showAlert("У вас нет попыток! Дождитесь окончания таймера рекламы или используйте другие способы.");
+                tg.showAlert("У вас нет попыток! Посмотрите рекламу, чтобы получить попытку полета.");
                 return;
             }
             document.getElementById('main-menu').style.display = 'none';
@@ -498,26 +498,30 @@
         async function openLeaderboard() {
             document.getElementById('modal-leaderboard').style.display = 'flex';
             let listContainer = document.getElementById('leaderboard-list');
-            listContainer.innerHTML = `<div class="leader-item"><span>Загрузка...</span></div>`;
+            listContainer.innerHTML = `<div class="leader-item"><span>Загрузка рейтинга...</span></div>`;
 
             try {
                 let response = await fetch(`${API_URL}/api/leaderboard`);
                 let data = await response.json();
                 if (data.success && data.leaders) {
                     listContainer.innerHTML = '';
+                    if (data.leaders.length === 0) {
+                        listContainer.innerHTML = `<div class="leader-item"><span>Пока нет участников</span></div>`;
+                        return;
+                    }
                     data.leaders.forEach((leader, index) => {
                         listContainer.innerHTML += `
                             <div class="leader-item">
-                                <span>#${index + 1} ${leader.first_name || 'Пилот'}</span>
+                                <span>#${index + 1} ${leader.first_name}</span>
                                 <span style="color: var(--accent-green); font-weight: bold;">${leader.weekly_score} ADP</span>
                             </div>
                         `;
                     });
                 } else {
-                    listContainer.innerHTML = `<div class="leader-item"><span>Пока нет участников</span></div>`;
+                    listContainer.innerHTML = `<div class="leader-item"><span>Ошибка загрузки топ-30</span></div>`;
                 }
             } catch (e) {
-                listContainer.innerHTML = `<div class="leader-item"><span>Ошибка загрузки топ-30</span></div>`;
+                listContainer.innerHTML = `<div class="leader-item"><span>Ошибка соединения с сервером</span></div>`;
             }
         }
 
@@ -530,9 +534,9 @@
             document.getElementById('modal-rules').style.display = 'none';
         }
 
-        // Логика игры
+        // Продвинутая логика Canvas-самолетика
         let canvas, ctx, gameInterval;
-        let plane = { x: 160, y: 400, width: 40, height: 30 };
+        let plane = { x: 160, y: 420, width: 36, height: 26 };
         let obstacles = [];
         let score = 0;
 
@@ -541,7 +545,7 @@
             ctx = canvas.getContext('2d');
             obstacles = [];
             score = 0;
-            plane.x = canvas.width / 2 - 20;
+            plane.x = canvas.width / 2 - plane.width / 2;
             plane.y = canvas.height - 70;
 
             canvas.onmousemove = (e) => {
@@ -560,18 +564,19 @@
         function updateGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.fillStyle = '#f97316';
-            ctx.fillRect(plane.x, plane.y, plane.width, plane.height);
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(plane.x + 12, plane.y + 5, 16, 10);
+            // Отрисовка красивого самолетика
+            ctx.fillStyle = '#00ffcc';
+            ctx.fillRect(plane.x + 14, plane.y, 8, 26); // фюзеляж
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(plane.x, plane.y + 10, 36, 6);  // крылья
 
-            if (Math.random() < 0.03) {
+            if (Math.random() < 0.035) {
                 obstacles.push({
-                    x: Math.random() * (canvas.width - 30),
-                    y: -30,
-                    width: 30,
-                    height: 30,
-                    speed: 3 + Math.random() * 2
+                    x: Math.random() * (canvas.width - 32),
+                    y: -35,
+                    width: 32,
+                    height: 32,
+                    speed: 3.5 + Math.random() * 2.5
                 });
             }
 
@@ -579,9 +584,13 @@
                 let obs = obstacles[i];
                 obs.y += obs.speed;
 
+                // Препятствия (метеориты/облака)
                 ctx.fillStyle = '#ef4444';
-                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+                ctx.beginPath();
+                ctx.arc(obs.x + 16, obs.y + 16, 16, 0, Math.PI * 2);
+                ctx.fill();
 
+                // Проверка столкновения
                 if (
                     plane.x < obs.x + obs.width &&
                     plane.x + plane.width > obs.x &&
@@ -619,7 +628,7 @@
                     userData.weekly_score = data.weekly_score;
                     userData.game_attempts = data.game_attempts;
                     updateUI();
-                    tg.showAlert(`Полет завершен! Заработано очков: ${score}. Они переведены в ADP!`);
+                    tg.showAlert(`Полет завершен! Заработано очков: ${score}. Они добавлены к вашему ADP балансу!`);
                 }
             } catch (e) {
                 tg.showAlert(`Полет завершен! Очки: ${score}. Ошибка сохранения на сервере.`);

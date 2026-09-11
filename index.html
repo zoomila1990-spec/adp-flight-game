@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
         :root {
             --bg-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0f172a 100%);
-            --card-bg: rgba(22, 27, 34, 0.75);
+            --card-bg: rgba(22, 27, 34, 0.78);
             --card-border: rgba(255, 255, 255, 0.08);
             --accent-green: #00ffcc;
             --accent-blue: #38bdf8;
@@ -21,19 +22,32 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            width: 100%;
+            min-height: 100%;
         }
 
         body {
             background: var(--bg-gradient);
             color: var(--text-main);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 16px;
             overflow-x: hidden;
+        }
+
+        button,
+        input {
+            font: inherit;
         }
 
         .container {
@@ -88,7 +102,7 @@
             justify-content: space-between;
             cursor: pointer;
             transition: transform 0.2s ease;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
         .leaderboard-banner:active {
@@ -155,7 +169,7 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: all 0.2s ease;
+            transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
@@ -207,11 +221,11 @@
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.7);
+            height: 100dvh;
+            background: rgba(0, 0, 0, 0.72);
             backdrop-filter: blur(8px);
             z-index: 200;
             align-items: center;
@@ -229,7 +243,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
         }
 
         .modal-header {
@@ -251,6 +265,7 @@
             color: var(--text-muted);
             font-size: 20px;
             cursor: pointer;
+            padding: 4px;
         }
 
         .modal-body {
@@ -265,35 +280,208 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 12px;
             background: rgba(255, 255, 255, 0.03);
             padding: 10px 14px;
             border-radius: 12px;
             font-size: 14px;
         }
 
+        .leader-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .leader-score {
+            color: var(--accent-green);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        /* ---------------------------------------------------------
+           ИГРОВОЙ ЭКРАН
+           --------------------------------------------------------- */
+
         #game-screen {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
             width: 100vw;
             height: 100vh;
-            background: #0f172a;
+            height: 100dvh;
+            background: linear-gradient(180deg, #0a1628 0%, #0f172a 100%);
             z-index: 100;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            padding: 10px 12px 14px;
+            overflow: hidden;
         }
 
-        canvas {
-            background: linear-gradient(to bottom, #0284c7, #0369a1);
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        .game-shell {
+            width: min(100%, 420px);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-hud {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .hud-card {
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 9px 12px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+        }
+
+        .hud-label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .hud-value {
+            font-size: 17px;
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        .canvas-wrap {
+            position: relative;
+            width: 100%;
+            flex: 1;
+            min-height: 320px;
+            max-height: 560px;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
+            background: #0284c7;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #38bdf8 0%, #0284c7 55%, #0369a1 100%);
+            touch-action: none;
+        }
+
+        .control-panel {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 18px;
+            padding: 10px 14px 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+        }
+
+        .control-label {
+            color: #cbd5e1;
+            text-align: center;
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .flight-slider {
+            width: 100%;
+            height: 30px;
+            appearance: none;
+            -webkit-appearance: none;
+            background: transparent;
+            outline: none;
+            touch-action: none;
+        }
+
+        .flight-slider::-webkit-slider-runnable-track {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #1d4ed8, #38bdf8, #1d4ed8);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .flight-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            margin-top: -12px;
+            border-radius: 50%;
+            background: #ff9800;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+        }
+
+        .flight-slider::-moz-range-track {
+            height: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #1d4ed8, #38bdf8, #1d4ed8);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+
+        .flight-slider::-moz-range-thumb {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #ff9800;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+        }
+
+        .game-tip {
+            margin-top: 4px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 11px;
+            line-height: 1.35;
+        }
+
+        @media (max-height: 650px) {
+            #game-screen {
+                padding-top: 6px;
+                padding-bottom: 8px;
+            }
+
+            .game-shell {
+                gap: 7px;
+            }
+
+            .hud-card {
+                padding: 6px 10px;
+            }
+
+            .control-panel {
+                padding: 7px 12px 8px;
+            }
+
+            .control-label,
+            .game-tip {
+                font-size: 10px;
+            }
         }
     </style>
 </head>
-<body>
 
+<body>
+    <!-- =========================================================
+         ГЛАВНОЕ МЕНЮ
+         ========================================================= -->
     <div class="container" id="main-menu">
         <div class="profile-card">
             <h2 id="user-name">Пилот</h2>
@@ -310,14 +498,22 @@
                     <p>Рейтинг пилотов недели</p>
                 </div>
             </div>
-            <button class="info-btn" onclick="event.stopPropagation(); openRules();">?</button>
+
+            <button
+                class="info-btn"
+                onclick="event.stopPropagation(); openRules();"
+                aria-label="Правила и награды"
+            >?</button>
         </div>
 
         <div class="menu-grid">
             <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
                 📺 Смотреть рекламу (+50 ADP)
             </button>
-            <div class="attempts-counter" id="attempts-text">Доступно попыток полета: 0</div>
+
+            <div class="attempts-counter" id="attempts-text">
+                Доступно попыток полета: 0
+            </div>
 
             <button class="btn btn-play" onclick="startGame()">
                 🚀 НАЧАТЬ ПОЛЕТ
@@ -327,6 +523,7 @@
                 <button class="btn btn-secondary" onclick="openReferral()">
                     👥 Рефералы (+10 ADP)
                 </button>
+
                 <button class="btn btn-secondary" onclick="connectWallet()">
                     👛 Кошелек
                 </button>
@@ -334,30 +531,40 @@
         </div>
     </div>
 
-    <!-- Модальное окно: Топ-30 -->
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: TOP-30
+         ========================================================= -->
     <div class="modal" id="modal-leaderboard">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🏆 Топ-30 Пилотов</h3>
                 <button class="close-modal" onclick="closeModals()">✕</button>
             </div>
+
             <div class="modal-body" id="leaderboard-list">
-                <div class="leader-item"><span>Загрузка рейтинга...</span></div>
+                <div class="leader-item">
+                    <span>Загрузка рейтинга...</span>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно: Правила -->
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: ПРАВИЛА
+         ========================================================= -->
     <div class="modal" id="modal-rules">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>ℹ️ Правила и Награды</h3>
                 <button class="close-modal" onclick="closeModals()">✕</button>
             </div>
+
             <div class="modal-body">
                 <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5;">
-                    Участвуйте в еженедельной гонке лиги ADP Flight! Зарабатывайте очки в полетах и за просмотр рекламы.
+                    Участвуйте в еженедельной гонке ADP Flight League.
+                    Зарабатывайте ADP в полетах и за просмотр рекламы.
                 </p>
+
                 <div style="background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); padding: 12px; border-radius: 12px; margin-top: 8px;">
                     <p style="color: var(--accent-yellow); font-size: 14px; font-weight: bold;">
                         Топ-10 игроков в конце недели разделят призовой фонд в TON!
@@ -367,273 +574,786 @@
         </div>
     </div>
 
-    <!-- Игровой экран -->
+    <!-- =========================================================
+         ИГРОВОЙ ЭКРАН
+         ========================================================= -->
     <div id="game-screen">
-        <div style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
-            Очки: <span id="current-game-score">0</span>
-        </div>
-        <canvas id="gameCanvas" width="360" height="500"></canvas>
-        <div style="margin-top: 15px; color: var(--text-muted); font-size: 13px;">
-            Удерживайте и ведите для управления самолетом
+        <div class="game-shell">
+            <div class="game-hud">
+                <div class="hud-card">
+                    <span class="hud-label">Счёт</span>
+                    <span class="hud-value" id="current-game-score">0</span>
+                </div>
+
+                <div class="hud-card">
+                    <span class="hud-label">Сложность</span>
+                    <span class="hud-value" id="current-speed-level">x1.0</span>
+                </div>
+            </div>
+
+            <div class="canvas-wrap" id="canvas-wrap">
+                <canvas id="gameCanvas" width="380" height="520"></canvas>
+            </div>
+
+            <div class="control-panel">
+                <div class="control-label">✈️ Штурвал — двигайте ползунок влево и вправо</div>
+                <input
+                    id="flightSlider"
+                    class="flight-slider"
+                    type="range"
+                    min="0"
+                    max="380"
+                    value="190"
+                    aria-label="Управление самолетом"
+                >
+                <div class="game-tip">
+                    Уклоняйтесь от препятствий. Каждый успешно пройденный объект = 1 ADP.
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        /* =========================================================
+           НАСТРОЙКИ
+           ========================================================= */
+
         const API_URL = "https://stash-skilled-stucco.ngrok-free.dev";
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        const BOT_USERNAME = "adp_flight_test_bot";
+        const AD_COOLDOWN_SECONDS = 30 * 60;
+        const DAILY_AD_LIMIT = 5;
+
+        const tg = window.Telegram?.WebApp;
+
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+
+        function showAlert(message) {
+            if (tg?.showAlert) {
+                tg.showAlert(message);
+            } else {
+                alert(message);
+            }
+        }
+
+        function haptic(type = "light") {
+            try {
+                tg?.HapticFeedback?.impactOccurred(type);
+            } catch (error) {
+                // Виброотклик не критичен для работы приложения.
+            }
+        }
+
+        /* =========================================================
+           ПОЛЬЗОВАТЕЛЬ
+           ========================================================= */
+
+        const telegramUser = tg?.initDataUnsafe?.user;
 
         let userData = {
-            telegram_id: tg.initDataUnsafe?.user?.id || 123456789,
-            username: tg.initDataUnsafe?.user?.username || "pilot",
-            first_name: tg.initDataUnsafe?.user?.first_name || "Пилот",
+            telegram_id: telegramUser?.id || 123456789,
+            username: telegramUser?.username || "pilot",
+            first_name: telegramUser?.first_name || "Пилот",
             weekly_score: 0,
             game_attempts: 0,
             daily_ads_count: 0,
-            last_ad_time: 0
+            last_ad_time: 0,
+            is_admin: false
         };
 
         let adTimerInterval = null;
 
         async function syncUser() {
             try {
-                let response = await fetch(`${API_URL}/api/user/sync`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(`${API_URL}/api/user/sync`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
                         telegram_id: userData.telegram_id,
                         username: userData.username,
                         first_name: userData.first_name
                     })
                 });
-                let data = await response.json();
-                if (data.status === 'ok') {
-                    userData.weekly_score = data.user.weekly_score;
-                    userData.game_attempts = data.user.game_attempts;
-                    userData.daily_ads_count = data.user.daily_ads_count;
-                    userData.last_ad_time = data.user.last_ad_time || 0;
+
+                const data = await response.json();
+
+                if (data.status === "ok") {
+                    userData.weekly_score = Number(data.user.weekly_score || 0);
+                    userData.game_attempts = Number(data.user.game_attempts || 0);
+                    userData.daily_ads_count = Number(data.user.daily_ads_count || 0);
+                    userData.last_ad_time = Number(data.user.last_ad_time || 0);
+                    userData.is_admin = Boolean(data.user.is_admin);
+
                     updateUI();
                     startAdCooldownTimer();
                 }
-            } catch (e) {
-                console.log("Ошибка синхронизации:", e);
+            } catch (error) {
+                console.error("Ошибка синхронизации:", error);
             }
         }
 
         function updateUI() {
-            document.getElementById('user-name').innerText = userData.first_name;
-            document.getElementById('user-score').innerText = userData.weekly_score;
-            document.getElementById('attempts-text').innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/5)`;
+            document.getElementById("user-name").innerText = userData.first_name;
+            document.getElementById("user-score").innerText = userData.weekly_score;
+
+            const attemptsText = document.getElementById("attempts-text");
+
+            if (userData.is_admin) {
+                attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} · 🧪 Тестовый режим ∞`;
+            } else {
+                attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/${DAILY_AD_LIMIT})`;
+            }
+        }
+
+        /* =========================================================
+           РЕКЛАМА / ТАЙМЕР
+           ========================================================= */
+
+        function refreshAdButton() {
+            const btnAd = document.getElementById("btn-ad");
+
+            if (userData.is_admin) {
+                btnAd.disabled = false;
+                btnAd.innerHTML = "🧪 Тестовая реклама (+50 ADP)";
+                return false;
+            }
+
+            if (userData.daily_ads_count >= DAILY_AD_LIMIT) {
+                btnAd.disabled = true;
+                btnAd.innerHTML = "✅ Лимит рекламы на сегодня: 5/5";
+                return false;
+            }
+
+            const now = Math.floor(Date.now() / 1000);
+            const elapsed = now - userData.last_ad_time;
+            const remaining = AD_COOLDOWN_SECONDS - elapsed;
+
+            if (userData.last_ad_time === 0 || remaining <= 0) {
+                btnAd.disabled = false;
+                btnAd.innerHTML = "📺 Смотреть рекламу (+50 ADP)";
+                return false;
+            }
+
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+            const formattedTime = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+
+            btnAd.disabled = true;
+            btnAd.innerHTML = `⏳ Следующая реклама через ${formattedTime}`;
+            return true;
         }
 
         function startAdCooldownTimer() {
-            if (adTimerInterval) clearInterval(adTimerInterval);
+            if (adTimerInterval) {
+                clearInterval(adTimerInterval);
+                adTimerInterval = null;
+            }
 
-            const cooldownTime = 30 * 60; // 30 минут
-            const btnAd = document.getElementById('btn-ad');
+            const needsTimer = refreshAdButton();
+
+            if (!needsTimer) {
+                return;
+            }
 
             adTimerInterval = setInterval(() => {
-                let now = Math.floor(Date.now() / 1000);
-                let elapsed = now - userData.last_ad_time;
-                let remaining = cooldownTime - elapsed;
+                const stillWaiting = refreshAdButton();
 
-                if (userData.last_ad_time === 0 || remaining <= 0) {
-                    btnAd.disabled = false;
-                    btnAd.innerHTML = "📺 Смотреть рекламу (+50 ADP)";
+                if (!stillWaiting && adTimerInterval) {
                     clearInterval(adTimerInterval);
-                } else {
-                    let minutes = Math.floor(remaining / 60);
-                    let seconds = remaining % 60;
-                    let formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                    
-                    btnAd.disabled = true;
-                    btnAd.innerHTML = `⏳ Следующая реклама через ${formattedTime}`;
+                    adTimerInterval = null;
                 }
             }, 1000);
         }
 
         async function watchAd() {
+            haptic("light");
+
             try {
-                let response = await fetch(`${API_URL}/api/user/watch-ad`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ telegram_id: userData.telegram_id })
+                const response = await fetch(`${API_URL}/api/user/watch-ad`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        telegram_id: userData.telegram_id,
+                        username: userData.username,
+                        first_name: userData.first_name
+                    })
                 });
-                let data = await response.json();
+
+                const data = await response.json();
+
                 if (data.success) {
-                    userData.game_attempts = data.game_attempts;
-                    userData.weekly_score = data.weekly_score;
-                    userData.daily_ads_count = data.daily_ads_count;
-                    userData.last_ad_time = data.last_ad_time;
+                    userData.game_attempts = Number(data.game_attempts || 0);
+                    userData.weekly_score = Number(data.weekly_score || 0);
+                    userData.daily_ads_count = Number(data.daily_ads_count || 0);
+                    userData.last_ad_time = Number(data.last_ad_time || 0);
+                    userData.is_admin = Boolean(data.is_admin || userData.is_admin);
+
                     updateUI();
                     startAdCooldownTimer();
-                    tg.showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
+                    haptic("medium");
+
+                    showAlert("Реклама просмотрена! Начислено +50 ADP и 1 попытка.");
                 } else {
-                    tg.showAlert(data.reason || "Таймер не истек или лимит исчерпан");
+                    showAlert(data.reason || "Таймер не истек или лимит исчерпан.");
                 }
-            } catch (e) {
-                tg.showAlert("Ошибка подключения к серверу");
+            } catch (error) {
+                console.error("Ошибка рекламы:", error);
+                showAlert("Ошибка подключения к серверу.");
             }
         }
 
-        function startGame() {
-            if (userData.game_attempts <= 0) {
-                tg.showAlert("У вас нет попыток! Посмотрите рекламу, чтобы получить попытку полета.");
-                return;
-            }
-            document.getElementById('main-menu').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'flex';
-            initCanvasGame();
-        }
-
-        function openReferral() {
-            let refLink = `https://t.me/share/url?url=https://t.me/YourBotName?start=ref_${userData.telegram_id}&text=Присоединяйся к ADP Flight League и выигрывай TON!`;
-            window.open(refLink, '_blank');
-        }
-
-        function connectWallet() {
-            tg.showAlert("Интеграция кошелька TON Connect будет доступна в следующем обновлении!");
-        }
+        /* =========================================================
+           TOP-30 И ПРАВИЛА
+           ========================================================= */
 
         async function openLeaderboard() {
-            document.getElementById('modal-leaderboard').style.display = 'flex';
-            let listContainer = document.getElementById('leaderboard-list');
-            listContainer.innerHTML = `<div class="leader-item"><span>Загрузка рейтинга...</span></div>`;
+            haptic("light");
+
+            document.getElementById("modal-leaderboard").style.display = "flex";
+
+            const listContainer = document.getElementById("leaderboard-list");
+            listContainer.innerHTML = "";
+
+            const loading = document.createElement("div");
+            loading.className = "leader-item";
+            loading.textContent = "Загрузка рейтинга...";
+            listContainer.appendChild(loading);
 
             try {
-                let response = await fetch(`${API_URL}/api/leaderboard`);
-                let data = await response.json();
-                if (data.success && data.leaders) {
-                    listContainer.innerHTML = '';
-                    if (data.leaders.length === 0) {
-                        listContainer.innerHTML = `<div class="leader-item"><span>Пока нет участников</span></div>`;
-                        return;
-                    }
-                    data.leaders.forEach((leader, index) => {
-                        listContainer.innerHTML += `
-                            <div class="leader-item">
-                                <span>#${index + 1} ${leader.first_name}</span>
-                                <span style="color: var(--accent-green); font-weight: bold;">${leader.weekly_score} ADP</span>
-                            </div>
-                        `;
-                    });
-                } else {
-                    listContainer.innerHTML = `<div class="leader-item"><span>Ошибка загрузки топ-30</span></div>`;
+                const response = await fetch(`${API_URL}/api/leaderboard`);
+                const data = await response.json();
+
+                listContainer.innerHTML = "";
+
+                if (!data.success || !Array.isArray(data.leaders)) {
+                    throw new Error("Leaderboard response is invalid");
                 }
-            } catch (e) {
-                listContainer.innerHTML = `<div class="leader-item"><span>Ошибка соединения с сервером</span></div>`;
+
+                if (data.leaders.length === 0) {
+                    const empty = document.createElement("div");
+                    empty.className = "leader-item";
+                    empty.textContent = "Пока нет участников";
+                    listContainer.appendChild(empty);
+                    return;
+                }
+
+                data.leaders.forEach((leader, index) => {
+                    const row = document.createElement("div");
+                    row.className = "leader-item";
+
+                    const name = document.createElement("span");
+                    name.className = "leader-name";
+                    name.textContent = `#${index + 1} ${leader.first_name || "Пилот"}`;
+
+                    const score = document.createElement("span");
+                    score.className = "leader-score";
+                    score.textContent = `${Number(leader.weekly_score || 0)} ADP`;
+
+                    row.appendChild(name);
+                    row.appendChild(score);
+                    listContainer.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Ошибка Top-30:", error);
+                listContainer.innerHTML = "";
+
+                const fail = document.createElement("div");
+                fail.className = "leader-item";
+                fail.textContent = "Ошибка соединения с сервером";
+                listContainer.appendChild(fail);
             }
         }
 
         function openRules() {
-            document.getElementById('modal-rules').style.display = 'flex';
+            haptic("light");
+            document.getElementById("modal-rules").style.display = "flex";
         }
 
         function closeModals() {
-            document.getElementById('modal-leaderboard').style.display = 'none';
-            document.getElementById('modal-rules').style.display = 'none';
+            document.getElementById("modal-leaderboard").style.display = "none";
+            document.getElementById("modal-rules").style.display = "none";
         }
 
-        // Продвинутая логика Canvas-самолетика
-        let canvas, ctx, gameInterval;
-        let plane = { x: 160, y: 420, width: 36, height: 26 };
-        let obstacles = [];
+        /* =========================================================
+           РЕФЕРАЛЫ И КОШЕЛЕК
+           ========================================================= */
+
+        function openReferral() {
+            haptic("light");
+
+            const botLink = `https://t.me/${BOT_USERNAME}?start=ref_${userData.telegram_id}`;
+            const shareText = "Присоединяйся к ADP Flight League! ✈️";
+            const shareLink = `https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(shareText)}`;
+
+            if (tg?.openTelegramLink) {
+                tg.openTelegramLink(shareLink);
+            } else {
+                window.open(shareLink, "_blank");
+            }
+        }
+
+        function connectWallet() {
+            haptic("light");
+            showAlert("Интеграция TON Connect будет подключена на следующем этапе.");
+        }
+
+        /* =========================================================
+           ИГРА: ВИД СВЕРХ + ГОРИЗОНТАЛЬНЫЙ ШТУРВАЛ
+           ========================================================= */
+
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const slider = document.getElementById("flightSlider");
+
+        const GAME_WIDTH = 380;
+        const GAME_HEIGHT = 520;
+
+        canvas.width = GAME_WIDTH;
+        canvas.height = GAME_HEIGHT;
+        slider.min = 0;
+        slider.max = GAME_WIDTH;
+
+        let animationFrameId = null;
+        let isPlaying = false;
+        let lastFrameTime = 0;
         let score = 0;
+        let gameSpeedMultiplier = 1;
+        let spawnTimer = 0;
+        let nextSpawnDelay = 700;
+        let obstacles = [];
+
+        const plane = {
+            x: GAME_WIDTH / 2 - 27,
+            y: GAME_HEIGHT - 95,
+            width: 54,
+            height: 62,
+            targetX: GAME_WIDTH / 2 - 27,
+            followSpeed: 9,
+            tilt: 0
+        };
+
+        const planeImage = new Image();
+        planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 116">
+                <defs>
+                    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ffffff"/>
+                        <stop offset="100%" stop-color="#dbe7f5"/>
+                    </linearGradient>
+                    <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffb020"/>
+                        <stop offset="100%" stop-color="#f97316"/>
+                    </linearGradient>
+                </defs>
+
+                <ellipse cx="50" cy="62" rx="15" ry="38" fill="rgba(0,0,0,0.18)"/>
+
+                <path d="M50 43 L8 63 L15 75 L50 57 Z" fill="url(#wingGrad)"/>
+                <path d="M50 43 L92 63 L85 75 L50 57 Z" fill="url(#wingGrad)"/>
+
+                <rect x="39" y="12" width="22" height="82" rx="11" fill="url(#bodyGrad)"/>
+                <path d="M39 20 Q50 2 61 20 Z" fill="#f8fafc"/>
+                <rect x="44" y="24" width="12" height="18" rx="6" fill="#0ea5e9"/>
+
+                <path d="M42 85 L25 103 L34 108 L50 94 Z" fill="url(#wingGrad)"/>
+                <path d="M58 85 L75 103 L66 108 L50 94 Z" fill="url(#wingGrad)"/>
+                <path d="M47 82 L50 69 L53 82 L53 101 L47 101 Z" fill="#f8fafc"/>
+            </svg>
+        `);
+
+        slider.addEventListener("input", () => {
+            if (!isPlaying) {
+                return;
+            }
+
+            plane.targetX = Number(slider.value) - plane.width / 2;
+            plane.targetX = clamp(plane.targetX, 0, GAME_WIDTH - plane.width);
+        });
+
+        function clamp(value, min, max) {
+            return Math.max(min, Math.min(max, value));
+        }
+
+        function randomBetween(min, max) {
+            return min + Math.random() * (max - min);
+        }
+
+        function startGame() {
+            if (userData.game_attempts <= 0) {
+                showAlert("У вас нет попыток! Посмотрите рекламу, чтобы получить попытку полета.");
+                return;
+            }
+
+            haptic("medium");
+
+            document.getElementById("main-menu").style.display = "none";
+            document.getElementById("game-screen").style.display = "flex";
+
+            initCanvasGame();
+        }
 
         function initCanvasGame() {
-            canvas = document.getElementById('gameCanvas');
-            ctx = canvas.getContext('2d');
-            obstacles = [];
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
             score = 0;
-            plane.x = canvas.width / 2 - plane.width / 2;
-            plane.y = canvas.height - 70;
+            gameSpeedMultiplier = 1;
+            obstacles = [];
+            spawnTimer = 0;
+            nextSpawnDelay = randomBetween(650, 1050);
 
-            canvas.onmousemove = (e) => {
-                let rect = canvas.getBoundingClientRect();
-                plane.x = e.clientX - rect.left - plane.width / 2;
-            };
-            canvas.ontouchmove = (e) => {
-                let rect = canvas.getBoundingClientRect();
-                plane.x = e.touches[0].clientX - rect.left - plane.width / 2;
-            };
+            plane.x = GAME_WIDTH / 2 - plane.width / 2;
+            plane.targetX = plane.x;
+            plane.y = GAME_HEIGHT - 95;
+            plane.tilt = 0;
 
-            if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(updateGame, 1000 / 60);
+            slider.value = GAME_WIDTH / 2;
+
+            document.getElementById("current-game-score").innerText = "0";
+            document.getElementById("current-speed-level").innerText = "x1.0";
+
+            isPlaying = true;
+            lastFrameTime = performance.now();
+            animationFrameId = requestAnimationFrame(gameLoop);
         }
 
-        function updateGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function gameLoop(timestamp) {
+            if (!isPlaying) {
+                return;
+            }
 
-            // Отрисовка красивого самолетика
-            ctx.fillStyle = '#00ffcc';
-            ctx.fillRect(plane.x + 14, plane.y, 8, 26); // фюзеляж
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(plane.x, plane.y + 10, 36, 6);  // крылья
+            const deltaSeconds = Math.min((timestamp - lastFrameTime) / 1000, 0.035);
+            lastFrameTime = timestamp;
 
-            if (Math.random() < 0.035) {
-                obstacles.push({
-                    x: Math.random() * (canvas.width - 32),
-                    y: -35,
-                    width: 32,
-                    height: 32,
-                    speed: 3.5 + Math.random() * 2.5
-                });
+            updateGame(deltaSeconds);
+            drawGame();
+
+            if (isPlaying) {
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+        }
+
+        function updateGame(deltaSeconds) {
+            gameSpeedMultiplier = Math.min(1 + score * 0.045, 2.8);
+            document.getElementById("current-speed-level").innerText = `x${gameSpeedMultiplier.toFixed(1)}`;
+
+            const dx = plane.targetX - plane.x;
+            plane.x += dx * Math.min(plane.followSpeed * deltaSeconds, 1);
+            plane.x = clamp(plane.x, 0, GAME_WIDTH - plane.width);
+
+            const targetTilt = clamp(dx * 0.022, -0.55, 0.55);
+            plane.tilt += (targetTilt - plane.tilt) * Math.min(10 * deltaSeconds, 1);
+
+            spawnTimer += deltaSeconds * 1000;
+
+            if (spawnTimer >= nextSpawnDelay) {
+                spawnObstacle();
+                spawnTimer = 0;
+
+                const speedFactor = Math.max(0.72, 1 / gameSpeedMultiplier);
+                nextSpawnDelay = randomBetween(620, 1080) * speedFactor;
             }
 
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                let obs = obstacles[i];
-                obs.y += obs.speed;
+                const obstacle = obstacles[i];
 
-                // Препятствия (метеориты/облака)
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.arc(obs.x + 16, obs.y + 16, 16, 0, Math.PI * 2);
-                ctx.fill();
+                obstacle.y += obstacle.speed * gameSpeedMultiplier * deltaSeconds;
+                obstacle.x += obstacle.drift * deltaSeconds;
 
-                // Проверка столкновения
-                if (
-                    plane.x < obs.x + obs.width &&
-                    plane.x + plane.width > obs.x &&
-                    plane.y < obs.y + obs.height &&
-                    plane.y + plane.height > obs.y
-                ) {
-                    endCanvasGame();
+                if (obstacle.x < 0) {
+                    obstacle.x = 0;
+                    obstacle.drift = Math.abs(obstacle.drift);
+                }
+
+                if (obstacle.x + obstacle.width > GAME_WIDTH) {
+                    obstacle.x = GAME_WIDTH - obstacle.width;
+                    obstacle.drift = -Math.abs(obstacle.drift);
+                }
+
+                if (!obstacle.passed && obstacle.y > plane.y + plane.height) {
+                    obstacle.passed = true;
+                    score += 1;
+                    document.getElementById("current-game-score").innerText = String(score);
+                    haptic("light");
+                }
+
+                if (checkCollision(plane, obstacle)) {
+                    finishGame("collision");
                     return;
                 }
 
-                if (obs.y > canvas.height) {
+                if (obstacle.y > GAME_HEIGHT + 100) {
                     obstacles.splice(i, 1);
-                    score += 10;
-                    document.getElementById('current-game-score').innerText = score;
                 }
             }
         }
 
-        async function endCanvasGame() {
-            clearInterval(gameInterval);
-            document.getElementById('game-screen').style.display = 'none';
-            document.getElementById('main-menu').style.display = 'flex';
+        function spawnObstacle() {
+            const types = ["meteor", "bird", "cloud"];
+            const type = types[Math.floor(Math.random() * types.length)];
+
+            let width;
+            let height;
+            let speed;
+            let drift;
+
+            if (type === "meteor") {
+                width = randomBetween(34, 52);
+                height = width;
+                speed = randomBetween(145, 205);
+                drift = randomBetween(-22, 22);
+            } else if (type === "bird") {
+                width = randomBetween(44, 62);
+                height = randomBetween(24, 34);
+                speed = randomBetween(160, 220);
+                drift = randomBetween(-42, 42);
+            } else {
+                width = randomBetween(58, 88);
+                height = randomBetween(34, 48);
+                speed = randomBetween(125, 175);
+                drift = randomBetween(-14, 14);
+            }
+
+            obstacles.push({
+                type,
+                x: randomBetween(4, GAME_WIDTH - width - 4),
+                y: -height - 20,
+                width,
+                height,
+                speed,
+                drift,
+                passed: false
+            });
+        }
+
+        function checkCollision(player, obstacle) {
+            const planeMarginX = 10;
+            const planeMarginTop = 7;
+            const planeMarginBottom = 9;
+
+            const obstacleMarginX = obstacle.type === "bird" ? 7 : 5;
+            const obstacleMarginY = obstacle.type === "bird" ? 5 : 4;
+
+            const playerLeft = player.x + planeMarginX;
+            const playerRight = player.x + player.width - planeMarginX;
+            const playerTop = player.y + planeMarginTop;
+            const playerBottom = player.y + player.height - planeMarginBottom;
+
+            const obstacleLeft = obstacle.x + obstacleMarginX;
+            const obstacleRight = obstacle.x + obstacle.width - obstacleMarginX;
+            const obstacleTop = obstacle.y + obstacleMarginY;
+            const obstacleBottom = obstacle.y + obstacle.height - obstacleMarginY;
+
+            return (
+                playerLeft < obstacleRight &&
+                playerRight > obstacleLeft &&
+                playerTop < obstacleBottom &&
+                playerBottom > obstacleTop
+            );
+        }
+
+        function drawGame() {
+            ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            drawSkyDetails();
+
+            for (const obstacle of obstacles) {
+                drawObstacle(obstacle);
+            }
+
+            drawPlane();
+        }
+
+        function drawSkyDetails() {
+            ctx.save();
+
+            ctx.globalAlpha = 0.16;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+
+            const offset = (performance.now() * 0.03 * gameSpeedMultiplier) % 70;
+
+            for (let y = -70 + offset; y < GAME_HEIGHT; y += 70) {
+                ctx.beginPath();
+                ctx.moveTo(18, y);
+                ctx.lineTo(48, y + 18);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(GAME_WIDTH - 18, y + 18);
+                ctx.lineTo(GAME_WIDTH - 48, y + 36);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawPlane() {
+            const centerX = plane.x + plane.width / 2;
+            const centerY = plane.y + plane.height / 2;
+
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(plane.tilt);
+
+            if (planeImage.complete && planeImage.naturalWidth > 0) {
+                ctx.drawImage(
+                    planeImage,
+                    -plane.width / 2,
+                    -plane.height / 2,
+                    plane.width,
+                    plane.height
+                );
+            } else {
+                drawPlaneFallback();
+            }
+
+            ctx.restore();
+        }
+
+        function drawPlaneFallback() {
+            ctx.fillStyle = "#f8fafc";
+            ctx.fillRect(-6, -28, 12, 50);
+
+            ctx.fillStyle = "#ff9800";
+            ctx.beginPath();
+            ctx.moveTo(0, -10);
+            ctx.lineTo(-25, 8);
+            ctx.lineTo(-18, 14);
+            ctx.lineTo(0, 3);
+            ctx.lineTo(18, 14);
+            ctx.lineTo(25, 8);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawObstacle(obstacle) {
+            if (obstacle.type === "meteor") {
+                drawMeteor(obstacle);
+            } else if (obstacle.type === "bird") {
+                drawBird(obstacle);
+            } else {
+                drawCloud(obstacle);
+            }
+        }
+
+        function drawMeteor(obstacle) {
+            const cx = obstacle.x + obstacle.width / 2;
+            const cy = obstacle.y + obstacle.height / 2;
+            const radius = obstacle.width / 2;
+
+            ctx.save();
+
+            ctx.fillStyle = "#475569";
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#334155";
+            ctx.beginPath();
+            ctx.arc(cx - radius * 0.28, cy - radius * 0.12, radius * 0.22, 0, Math.PI * 2);
+            ctx.arc(cx + radius * 0.24, cy + radius * 0.20, radius * 0.16, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        function drawBird(obstacle) {
+            const cx = obstacle.x + obstacle.width / 2;
+            const cy = obstacle.y + obstacle.height / 2;
+
+            ctx.save();
+            ctx.strokeStyle = "#7c2d12";
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(cx - obstacle.width * 0.42, cy - 2);
+            ctx.quadraticCurveTo(cx - obstacle.width * 0.22, cy + obstacle.height * 0.44, cx, cy);
+            ctx.quadraticCurveTo(cx + obstacle.width * 0.22, cy + obstacle.height * 0.44, cx + obstacle.width * 0.42, cy - 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawCloud(obstacle) {
+            const x = obstacle.x;
+            const y = obstacle.y;
+            const w = obstacle.width;
+            const h = obstacle.height;
+
+            ctx.save();
+            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+
+            ctx.beginPath();
+            ctx.arc(x + w * 0.28, y + h * 0.60, h * 0.30, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.50, y + h * 0.43, h * 0.39, 0, Math.PI * 2);
+            ctx.arc(x + w * 0.72, y + h * 0.60, h * 0.31, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillRect(x + w * 0.24, y + h * 0.52, w * 0.52, h * 0.34);
+            ctx.restore();
+        }
+
+        async function finishGame(reason) {
+            if (!isPlaying) {
+                return;
+            }
+
+            isPlaying = false;
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            haptic("heavy");
+
+            document.getElementById("game-screen").style.display = "none";
+            document.getElementById("main-menu").style.display = "flex";
 
             try {
-                let response = await fetch(`${API_URL}/api/user/finish-game`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch(`${API_URL}/api/user/finish-game`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
                     body: JSON.stringify({
                         telegram_id: userData.telegram_id,
                         score: score
                     })
                 });
-                let data = await response.json();
+
+                const data = await response.json();
+
                 if (data.success) {
-                    userData.weekly_score = data.weekly_score;
-                    userData.game_attempts = data.game_attempts;
+                    userData.weekly_score = Number(data.weekly_score || 0);
+                    userData.game_attempts = Number(data.game_attempts || 0);
                     updateUI();
-                    tg.showAlert(`Полет завершен! Заработано очков: ${score}. Они добавлены к вашему ADP балансу!`);
+
+                    if (reason === "collision") {
+                        showAlert(`Полет завершен!\nЗаработано: ${score} ADP.`);
+                    }
+                } else {
+                    showAlert(data.reason || "Не удалось сохранить результат полета.");
                 }
-            } catch (e) {
-                tg.showAlert(`Полет завершен! Очки: ${score}. Ошибка сохранения на сервере.`);
+            } catch (error) {
+                console.error("Ошибка сохранения полета:", error);
+                showAlert(`Полет завершен. Счет: ${score}. Сервер не сохранил результат.`);
             }
         }
+
+        /* =========================================================
+           СТАРТ ПРИЛОЖЕНИЯ
+           ========================================================= */
 
         syncUser();
     </script>

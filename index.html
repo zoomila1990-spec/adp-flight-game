@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v8: AdsGram test + TON Connect wallet -->
+    <!-- v8.1: TON Connect restore without repeated startup popup -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -864,6 +864,7 @@
         let tonConnectUI = null;
         let tonConnectionRestored = false;
         let tonWalletSyncInProgress = false;
+        let tonConnectInitiatedByUser = false;
 
         function getAdsgramController() {
             if (adsgramController) {
@@ -1329,7 +1330,7 @@
             }
         }
 
-        async function saveTonWalletOnServer(wallet) {
+        async function saveTonWalletOnServer(wallet, showSuccessMessage = false) {
             if (!telegramInitData || !wallet?.account?.address) {
                 return false;
             }
@@ -1401,10 +1402,15 @@
                 userData.ton_wallet_updated_at = Number(data.wallet_updated_at || 0);
 
                 updateWalletButton();
-                haptic("medium");
-                showAlert(
-                    `TON-кошелёк подключён и сохранён:\n${shortenTonAddress(userData.ton_wallet_address)}`
-                );
+
+                // Сообщение показываем только после ручного подключения пользователя.
+                // При автоматическом восстановлении TON Connect на старте — молча.
+                if (showSuccessMessage) {
+                    haptic("medium");
+                    showAlert(
+                        `TON-кошелёк подключён и сохранён:\n${shortenTonAddress(userData.ton_wallet_address)}`
+                    );
+                }
 
                 return true;
 
@@ -1485,10 +1491,21 @@
                         updateWalletButton();
 
                         if (wallet) {
-                            await saveTonWalletOnServer(wallet);
+                            const shouldNotify = tonConnectInitiatedByUser;
+                            const saved = await saveTonWalletOnServer(
+                                wallet,
+                                shouldNotify
+                            );
+
+                            if (saved) {
+                                tonConnectInitiatedByUser = false;
+                            }
+                        } else {
+                            tonConnectInitiatedByUser = false;
                         }
                     },
                     (error) => {
+                        tonConnectInitiatedByUser = false;
                         console.error("TON Connect status error:", error);
                     }
                 );
@@ -1548,9 +1565,11 @@
                     return;
                 }
 
+                tonConnectInitiatedByUser = true;
                 await tonConnectUI.openModal();
 
             } catch (error) {
+                tonConnectInitiatedByUser = false;
                 console.error("Ошибка TON Connect:", error);
                 showAlert(error.message || "Не удалось открыть TON Connect.");
             }
@@ -2212,11 +2231,13 @@
            СТАРТ ПРИЛОЖЕНИЯ
            ========================================================= */
 
-        // TON Connect восстанавливает ранее подключённый кошелёк, если сессия сохранилась.
-        initTonConnect();
-
-        // При старте сервер обязательно проверяет подпись Telegram initData.
-        syncUser();
+        // Сначала забираем сохранённые данные пользователя с сервера.
+        // Затем TON Connect восстанавливает свою сессию.
+        // Так автovосстановление кошелька не вызывает повторное сообщение при каждом входе.
+        (async function startApp() {
+            await syncUser();
+            initTonConnect();
+        })();
     </script>
 </body>
 </html>

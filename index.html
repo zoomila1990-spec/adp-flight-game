@@ -6,495 +6,432 @@
     <title>ADP Flight League</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body {
-            background-color: var(--tg-theme-bg-color, #0f172a);
-            color: var(--tg-theme-text-color, #ffffff);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0f172a 100%);
+            --card-bg: rgba(22, 27, 34, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-green: #00ffcc;
+            --accent-blue: #38bdf8;
+            --accent-yellow: #facc15;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 12px;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-        }
-        .profile-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 12px 16px;
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-        .avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ff9800, #f57c00);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .user-info { text-align: left; }
-        .user-name { font-size: 15px; font-weight: 700; margin: 0; }
-        .user-sub { font-size: 11px; opacity: 0.6; margin: 2px 0 0 0; }
-
-        .game-card {
-            background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 24px;
             padding: 16px;
+            overflow-x: hidden;
+        }
+
+        .container {
             width: 100%;
             max-width: 420px;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding-bottom: 30px;
         }
-        .plane-icon { font-size: 48px; margin-bottom: 4px; display: block; }
-        .title { font-size: 20px; font-weight: 800; margin: 0 0 12px 0; color: #ffffff; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
+        /* Шапка профиля */
+        .profile-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-        .stat-box {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 14px;
-            padding: 8px;
+
+        .profile-info h2 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--text-main);
         }
-        .stat-label { font-size: 10px; color: #cbd5e1; font-weight: 600; text-transform: uppercase; }
-        .stat-value { font-size: 18px; font-weight: 800; color: #ffffff; margin-top: 2px; }
+
+        .balance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(0, 255, 204, 0.1);
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent-green);
+        }
+
+        /* Карточка вознаграждений */
+        .rewards-card {
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.1), rgba(56, 189, 248, 0.05));
+            border: 1px solid rgba(250, 204, 21, 0.2);
+            border-radius: 20px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .rewards-card h3 {
+            font-size: 14px;
+            color: var(--accent-yellow);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .rewards-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        /* Главное меню / Кнопки действий */
+        .menu-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
 
         .btn {
-            border: none;
             width: 100%;
-            padding: 14px;
-            border-radius: 14px;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
-        .btn:active { transform: scale(0.98); }
-        .btn-fly {
-            background: linear-gradient(135deg, #ff9800, #e65100);
-            color: white;
-            box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+
+        .btn:active {
+            transform: scale(0.97);
         }
+
+        /* Кнопка рекламы (теперь выше) */
         .btn-ad {
-            background: rgba(59, 130, 246, 0.25);
-            color: #93c5fd;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
             border: 1px solid rgba(59, 130, 246, 0.4);
         }
-        
-        #game-container {
+
+        /* Главная кнопка Играть (ниже, самая заметная) */
+        .btn-play {
+            background: linear-gradient(135deg, #00ffcc, #00b894);
+            color: #0d1117;
+            font-size: 18px;
+            box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            font-size: 14px;
+            padding: 14px;
+        }
+
+        .attempts-counter {
+            text-align: center;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: -6px;
+        }
+
+        /* Блок кошелька и рефералов */
+        .row-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* Скрытый экран игры (Canvas) */
+        #game-screen {
             display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
+            z-index: 100;
             flex-direction: column;
             align-items: center;
-            width: 100%;
-            max-width: 420px;
+            justify-content: center;
         }
+
         canvas {
-            background: #0284c7;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            width: 100%;
-            height: 420px;
-        }
-        .control-panel {
-            width: 100%;
-            margin-top: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 10px 14px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .slider {
-            width: 100%;
-            appearance: none;
-            height: 10px;
-            border-radius: 5px;
-            background: #334155;
-            outline: none;
-        }
-        .slider::-webkit-slider-thumb {
-            appearance: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: #ff9800;
-            cursor: pointer;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.4);
-            border: 2px solid #fff;
+            background: linear-gradient(to bottom, #38bdf8, #0284c7);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
     </style>
 </head>
 <body>
 
-    <!-- Меню -->
-    <div id="menu-container" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div class="container" id="main-menu">
+        <!-- Шапка профиля -->
         <div class="profile-card">
-            <div class="avatar" id="user-avatar">✈️</div>
-            <div class="user-info">
-                <p class="user-name" id="user-name">Загрузка...</p>
-                <p class="user-sub"><span id="user-username">@---</span> | ID: <span id="user-id">---</span></p>
+            <div class="profile-info">
+                <h2 id="user-name">Пилот</h2>
+                <div class="balance-badge">
+                    💎 <span id="user-score">0</span> ADP
+                </div>
             </div>
+            <div style="font-size: 28px;">✈️</div>
         </div>
 
-        <div class="game-card">
-            <span class="plane-icon">✈️</span>
-            <h1 class="title">ADP Flight League</h1>
+        <!-- Награды недели -->
+        <div class="rewards-card">
+            <h3>🏆 Награды недели</h3>
+            <p>Топ-10 игроков в конце недели разделят призовой фонд в <b>TON</b> и эксклюзивные граммы наград!</p>
+        </div>
 
-            <div class="stats-grid">
-                <div class="stat-box">
-                    <div class="stat-label">Баланс ADP</div>
-                    <div class="stat-value" id="adp-balance">0</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-label">Попытки</div>
-                    <div class="stat-value" id="attempts-count">0</div>
-                </div>
+        <!-- МЕНЮ КНОПОК -->
+        <div class="menu-grid">
+            <!-- 1. ПОСМОТРЕТЬ РЕКЛАМУ (теперь выше) -->
+            <button class="btn btn-ad" onclick="watchAd()">
+                📺 Смотреть рекламу (+50 ADP & +1 попытка)
+            </button>
+            <div class="attempts-counter" id="attempts-text">Доступно попыток полета: 0</div>
+
+            <!-- 2. ИГРАТЬ (ниже, ярко-неоновая) -->
+            <button class="btn btn-play" onclick="startGame()">
+                🚀 НАЧАТЬ ПОЛЕТ
+            </button>
+
+            <!-- Дополнительные функции -->
+            <div class="row-group">
+                <button class="btn btn-secondary" onclick="openReferral()">
+                    👥 Рефералы (+10 ADP)
+                </button>
+                <button class="btn btn-secondary" onclick="connectWallet()">
+                    👛 Кошелек
+                </button>
             </div>
-
-            <button class="btn btn-fly" onclick="startFlight()">🚀 В полет!</button>
-            <button class="btn btn-ad" onclick="watchAd()">📺 Посмотреть рекламу (<span id="ad-count">0</span>/5)</button>
         </div>
     </div>
 
-    <!-- Игровой экран -->
-    <div id="game-container">
-        <div class="game-card" style="margin-bottom: 8px; padding: 10px 14px; width: 100%;">
-            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; color: #ffffff;">
-                <span>Счет: <span id="current-score" style="color: #60a5fa;">0</span></span>
-                <span style="color: #fbbf24;">⚡ Сложность: <span id="current-speed-level">x1.0</span></span>
-            </div>
+    <!-- ИГРОВОЙ ЭКРАН -->
+    <div id="game-screen">
+        <div style="color: white; font-size: 20px; font-weight: bold; margin-bottom: 10px;">
+            Очки: <span id="current-game-score">0</span>
         </div>
-        
-        <canvas id="flightCanvas" width="380" height="420"></canvas>
-
-        <div class="control-panel">
-            <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 4px; font-weight: 600; text-transform: uppercase;">Штурвал</div>
-            <input type="range" min="0" max="380" value="190" class="slider" id="flightSlider">
+        <canvas id="gameCanvas" width="360" height="500"></canvas>
+        <div style="margin-top: 15px; color: var(--text-muted); font-size: 13px;">
+            Удерживайте и ведите для управления самолетом
         </div>
-
-        <button class="btn btn-ad" style="margin-top: 8px;" onclick="returnToMenu()">⬅️ Назад в меню</button>
     </div>
 
     <script>
-        const API_URL = "https://stash-skilled-stucco.ngrok-free.dev";
-        let currentUser = null;
+        const API_URL = "https://stash-skilled-stucco.ngrok-free.dev"; // Укажите актуальный ngrok URL при локальном тестировании
+        let tg = window.Telegram.WebApp;
+        tg.expand();
 
-        const canvas = document.getElementById('flightCanvas');
-        const ctx = canvas.getContext('2d');
-        const slider = document.getElementById('flightSlider');
-        
-        let gameInterval = null;
-        let score = 0;
-        let gameSpeedMultiplier = 1;
-        
-        let plane = { 
-            x: 190, 
-            y: 300, 
-            width: 50, 
-            height: 50, 
-            targetX: 190, 
-            speed: 0.18 
+        let userData = {
+            telegram_id: tg.initDataUnsafe?.user?.id || 123456789,
+            username: tg.initDataUnsafe?.user?.username || "pilot",
+            first_name: tg.initDataUnsafe?.user?.first_name || "Пилот",
+            weekly_score: 0,
+            game_attempts: 0,
+            daily_ads_count: 0
         };
 
-        // Самолет с яркими оранжевыми крыльями (отлично видно на голубом небе)
-        const planeImage = new Image();
-        planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
-              <defs>
-                <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#ffffff"/>
-                  <stop offset="100%" stop-color="#e2e8f0"/>
-                </linearGradient>
-                <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stop-color="#ff9800"/>
-                  <stop offset="100%" stop-color="#f57c00"/>
-                </linearGradient>
-              </defs>
-              <!-- Тень -->
-              <ellipse cx="50" cy="54" rx="14" ry="32" fill="rgba(0,0,0,0.2)"/>
-              <!-- Левое крыло (оранжевое) -->
-              <path d="M 50 40 L 10 55 L 15 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
-              <!-- Правое крыло (оранжевое) -->
-              <path d="M 50 40 L 90 55 L 85 65 L 50 50 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
-              <!-- Основной корпус -->
-              <rect x="40" y="15" width="20" height="70" rx="10" fill="url(#bodyGrad)" stroke="#cbd5e1" stroke-width="1.5"/>
-              <!-- Кабина пилота -->
-              <rect x="44" y="22" width="12" height="16" rx="6" fill="#0284c7"/>
-              <!-- Хвостовое оперение -->
-              <path d="M 42 75 L 28 88 L 34 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
-              <path d="M 58 75 L 72 88 L 66 92 L 50 82 Z" fill="url(#wingGrad)" stroke="#e65100" stroke-width="1.5"/>
-            </svg>
-        `);
-
-        let obstacles = [];
-        let nextSpawnTime = 0;
-        let frameCount = 0;
-        let isPlaying = false;
-
-        async function initApp() {
-            const tg = window.Telegram?.WebApp;
-            if (tg) {
-                tg.ready();
-                tg.expand();
-                currentUser = tg.initDataUnsafe?.user;
-            }
-
-            if (!currentUser) {
-                currentUser = { id: 1285150103, username: 'zoomila1990', first_name: 'Ivan' };
-            }
-
-            document.getElementById('user-name').innerText = currentUser.first_name + (currentUser.last_name ? ' ' + currentUser.last_name : '');
-            document.getElementById('user-id').innerText = currentUser.id;
-            document.getElementById('user-username').innerText = currentUser.username ? '@' + currentUser.username : 'без юзернейма';
-            if (currentUser.first_name) {
-                document.getElementById('user-avatar').innerText = currentUser.first_name[0].toUpperCase();
-            }
-
-            await syncWithBackend();
-        }
-
-        async function syncWithBackend() {
+        // Синхронизация при старте
+        async function syncUser() {
             try {
-                const response = await fetch(`${API_URL}/api/user/sync`, {
+                let response = await fetch(`${API_URL}/api/user/sync`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        telegram_id: currentUser.id,
-                        username: currentUser.username || '',
-                        first_name: currentUser.first_name || ''
+                        telegram_id: userData.telegram_id,
+                        username: userData.username,
+                        first_name: userData.first_name
                     })
                 });
-
-                const data = await response.json();
+                let data = await response.json();
                 if (data.status === 'ok') {
-                    document.getElementById('ad-count').innerText = data.user.daily_ads_count;
-                    document.getElementById('attempts-count').innerText = data.user.game_attempts;
-                    document.getElementById('adp-balance').innerText = data.user.weekly_score;
+                    userData.weekly_score = data.user.weekly_score;
+                    userData.game_attempts = data.user.game_attempts;
+                    userData.daily_ads_count = data.user.daily_ads_count;
+                    updateUI();
                 }
             } catch (e) {
-                console.error("Ошибка подключения к API:", e);
+                console.log("Ошибка синхронизации:", e);
             }
+        }
+
+        function updateUI() {
+            document.getElementById('user-name').innerText = userData.first_name;
+            document.getElementById('user-score').innerText = userData.weekly_score;
+            document.getElementById('attempts-text').innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/5)`;
         }
 
         async function watchAd() {
             try {
-                const response = await fetch(`${API_URL}/api/user/watch-ad`, {
+                let response = await fetch(`${API_URL}/api/user/watch-ad`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        telegram_id: currentUser.id,
-                        username: currentUser.username || '',
-                        first_name: currentUser.first_name || ''
-                    })
+                    body: JSON.stringify({ telegram_id: userData.telegram_id })
                 });
-
-                const data = await response.json();
+                let data = await response.json();
                 if (data.success) {
-                    document.getElementById('ad-count').innerText = data.daily_ads_count;
-                    document.getElementById('attempts-count').innerText = data.game_attempts;
-                } else if (data.reason) {
-                    alert(data.reason);
+                    userData.game_attempts = data.game_attempts;
+                    userData.weekly_score = data.weekly_score;
+                    userData.daily_ads_count = data.daily_ads_count;
+                    updateUI();
+                    tg.showAlert("Реклама просмотрена! Получена попытка и бонусные ADP.");
+                } else {
+                    tg.showAlert(data.reason || "Лимит просмотров исчерпан");
                 }
             } catch (e) {
-                alert("Ошибка связи с сервером.");
+                tg.showAlert("Ошибка подключения к серверу");
             }
         }
 
-        async function startFlight() {
-            const attempts = parseInt(document.getElementById('attempts-count').innerText);
-            if (attempts <= 0) {
-                alert('У вас нет доступных попыток! Посмотрите видеорекламу.');
+        function startGame() {
+            if (userData.game_attempts <= 0) {
+                tg.showAlert("У вас нет попыток! Посмотрите рекламу, чтобы получить попытку.");
                 return;
             }
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'flex';
+            initCanvasGame();
+        }
 
-            document.getElementById('menu-container').style.display = 'none';
-            document.getElementById('game-container').style.display = 'flex';
+        function openReferral() {
+            let refLink = `https://t.me/share/url?url=https://t.me/YourBotName?start=ref_${userData.telegram_id}&text=Присоединяйся к ADP Flight League и выигрывай TON!`;
+            window.open(refLink, '_blank');
+        }
 
-            score = 0;
-            gameSpeedMultiplier = 1;
-            document.getElementById('current-speed-level').innerText = 'x1.0';
-            document.getElementById('current-score').innerText = '0';
+        function connectWallet() {
+            tg.showAlert("Интеграция кошелька TON Connect будет доступна в следующем обновлении!");
+        }
 
-            plane.x = canvas.width / 2 - plane.width / 2;
-            plane.targetX = plane.x;
-            slider.value = plane.x + plane.width / 2;
-            
+        // Логика самой игры (полотно с самолетиком)
+        let canvas, ctx, gameInterval;
+        let plane = { x: 160, y: 400, width: 40, height: 30, vx: 0 };
+        let obstacles = [];
+        let score = 0;
+
+        function initCanvasGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
             obstacles = [];
-            frameCount = 0;
-            nextSpawnTime = 20;
-            isPlaying = true;
+            score = 0;
+            plane.x = canvas.width / 2 - 20;
+            plane.y = canvas.height - 70;
+
+            // Управление касанием/мышкой
+            canvas.onmousemove = (e) => {
+                let rect = canvas.getBoundingClientRect();
+                plane.x = e.clientX - rect.left - plane.width / 2;
+            };
+            canvas.ontouchmove = (e) => {
+                let rect = canvas.getBoundingClientRect();
+                plane.x = e.touches[0].clientX - rect.left - plane.width / 2;
+            };
 
             if (gameInterval) clearInterval(gameInterval);
-            gameInterval = setInterval(updateGame, 20);
+            gameInterval = setInterval(updateGame, 1000 / 60);
         }
-
-        slider.addEventListener('input', () => {
-            if (isPlaying) {
-                plane.targetX = parseInt(slider.value) - plane.width / 2;
-            }
-        });
 
         function updateGame() {
-            frameCount++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Увеличение сложности и скорости игры
-            gameSpeedMultiplier = 1 + (score * 0.04); 
-            if (gameSpeedMultiplier > 2.8) gameSpeedMultiplier = 2.8;
-            document.getElementById('current-speed-level').innerText = gameSpeedMultiplier.toFixed(1);
+            // Отрисовка самолета с ярко-оранжевыми крыльями
+            ctx.fillStyle = '#f97316'; // Оранжевые крылья/корпус
+            ctx.fillRect(plane.x, plane.y, plane.width, plane.height);
+            ctx.fillStyle = '#ffffff'; // Кабина
+            ctx.fillRect(plane.x + 12, plane.y + 5, 16, 10);
 
-            // Движение самолета за ползунком
-            let dx = plane.targetX - plane.x;
-            plane.x += dx * plane.speed;
-
-            if (plane.x < 0) plane.x = 0;
-            if (plane.x > canvas.width - plane.width) plane.x = canvas.width - plane.width;
-
-            // Плавный и красивый наклон самолета в сторону движения
-            let maxTilt = 0.45;
-            let tilt = dx * 0.035;
-            if (tilt > maxTilt) tilt = maxTilt;
-            if (tilt < -maxTilt) tilt = -maxTilt;
-
-            // Отрисовка с учетом наклона
-            ctx.save();
-            ctx.translate(plane.x + plane.width / 2, plane.y + plane.height / 2);
-            ctx.rotate(tilt);
-            ctx.drawImage(planeImage, -plane.width / 2, -plane.height / 2, plane.width, plane.height);
-            ctx.restore();
-
-            // Динамический спавн объектов
-            let dynamicSpawnDelay = Math.max(7, 26 - Math.floor(score * 0.8));
-            if (frameCount >= nextSpawnTime) {
-                const types = [
-                    { type: 'meteor', w: 48, h: 48, speed: 3.3 },
-                    { type: 'bird', w: 36, h: 26, speed: 3.9 },
-                    { type: 'cloud', w: 68, h: 40, speed: 2.5 }
-                ];
-                
-                const selected = types[Math.floor(Math.random() * types.length)];
-                const randomX = Math.random() * (canvas.width - selected.w);
-
+            // Генерация препятствий
+            if (Math.random() < 0.03) {
                 obstacles.push({
-                    x: randomX,
-                    y: -70,
-                    width: selected.w,
-                    height: selected.h,
-                    type: selected.type,
-                    baseSpeed: selected.speed,
-                    passed: false
+                    x: Math.random() * (canvas.width - 30),
+                    y: -30,
+                    width: 30,
+                    height: 30,
+                    speed: 3 + Math.random() * 2
                 });
-
-                nextSpawnTime = frameCount + Math.floor(Math.random() * dynamicSpawnDelay) + 6;
             }
 
-            // Движение и отрисовка препятствий
+            // Движение препятствий
             for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].y += obstacles[i].baseSpeed * gameSpeedMultiplier;
+                let obs = obstacles[i];
+                obs.y += obs.speed;
 
-                ctx.save();
-                if (obstacles[i].type === 'meteor') {
-                    ctx.fillStyle = '#475569';
-                    ctx.beginPath();
-                    ctx.arc(obstacles[i].x + obstacles[i].width/2, obstacles[i].y + obstacles[i].height/2, obstacles[i].width/2, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#334155';
-                    ctx.beginPath();
-                    ctx.arc(obstacles[i].x + 14, obstacles[i].y + 18, 7, 0, Math.PI * 2);
-                    ctx.arc(obstacles[i].x + 32, obstacles[i].y + 32, 5, 0, Math.PI * 2);
-                    ctx.fill();
-                } else if (obstacles[i].type === 'bird') {
-                    ctx.strokeStyle = '#b45309';
-                    ctx.lineWidth = 3.5;
-                    ctx.beginPath();
-                    let bx = obstacles[i].x + obstacles[i].width/2;
-                    let by = obstacles[i].y + obstacles[i].height/2;
-                    ctx.moveTo(bx - 18, by - 8);
-                    ctx.quadraticCurveTo(bx - 9, by + 9, bx, by);
-                    ctx.quadraticCurveTo(bx + 9, by + 9, bx + 18, by - 8);
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-                    let cx = obstacles[i].x + obstacles[i].width / 2;
-                    let cy = obstacles[i].y + obstacles[i].height / 2;
-                    ctx.beginPath();
-                    ctx.arc(cx - 14, cy, 16, 0, Math.PI * 2);
-                    ctx.arc(cx + 14, cy, 18, 0, Math.PI * 2);
-                    ctx.arc(cx, cy - 6, 20, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.restore();
+                ctx.fillStyle = '#ef4444'; // Метеориты/препятствия
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
 
-                // Начисление счета по 1 очку за объект
-                if (!obstacles[i].passed && obstacles[i].y > plane.y + plane.height) {
-                    score += 1;
-                    obstacles[i].passed = true;
-                    document.getElementById('current-score').innerText = score;
-                }
-
-                // Проверка столкновений
-                let hitBoxMargin = 6;
+                // Столкновение
                 if (
-                    plane.x + hitBoxMargin < obstacles[i].x + obstacles[i].width - hitBoxMargin &&
-                    plane.x + plane.width - hitBoxMargin > obstacles[i].x + hitBoxMargin &&
-                    plane.y + hitBoxMargin < obstacles[i].y + obstacles[i].height - hitBoxMargin &&
-                    plane.y + plane.height - hitBoxMargin > obstacles[i].y + hitBoxMargin
+                    plane.x < obs.x + obs.width &&
+                    plane.x + plane.width > obs.x &&
+                    plane.y < obs.y + obs.height &&
+                    plane.y + plane.height > obs.y
                 ) {
-                    gameOver();
+                    endCanvasGame();
+                    return;
                 }
 
-                if (obstacles[i].y > canvas.height) {
+                if (obs.y > canvas.height) {
                     obstacles.splice(i, 1);
+                    score += 10;
+                    document.getElementById('current-game-score').innerText = score;
                 }
             }
         }
 
-        async function gameOver() {
-            isPlaying = false;
+        async function endCanvasGame() {
             clearInterval(gameInterval);
-            alert(`Крушение! Самолет потерпел аварию.\nИтоговый счет: ${score}`);
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
 
             try {
-                await fetch(`${API_URL}/api/user/finish-game`, {
+                let response = await fetch(`${API_URL}/api/user/finish-game`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        telegram_id: currentUser.id,
+                        telegram_id: userData.telegram_id,
                         score: score
                     })
                 });
+                let data = await response.json();
+                if (data.success) {
+                    userData.weekly_score = data.weekly_score;
+                    userData.game_attempts = data.game_attempts;
+                    updateUI();
+                    tg.showAlert(`Полет завершен! Заработано очков: ${score}. Они переведены в ADP!`);
+                }
             } catch (e) {
-                console.error("Ошибка сохранения результатов игры:", e);
+                tg.showAlert(`Полет завершен! Очки: ${score}. Ошибка сохранения на сервере.`);
             }
-
-            returnToMenu();
         }
 
-        function returnToMenu() {
-            isPlaying = false;
-            clearInterval(gameInterval);
-            document.getElementById('game-container').style.display = 'none';
-            document.getElementById('menu-container').style.display = 'flex';
-            syncWithBackend();
-        }
-
-        document.addEventListener('DOMContentLoaded', initApp);
+        // Запуск синхронизации при загрузке страницы
+        syncUser();
     </script>
 </body>
 </html>

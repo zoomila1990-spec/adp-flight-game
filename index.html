@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.7.1: fixed previous-week winners layout -->
+    <!-- v10.7.2: forced previous-week grid layout + cache check marker -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -2002,11 +2002,16 @@
 
                     const place = document.createElement("span");
                     place.className = "leader-place-v10";
+                    place.style.whiteSpace = "nowrap";
                     const rank = Number(leader.rank || 0);
                     place.textContent = rank === 1 ? "🥇 1" : rank === 2 ? "🥈 2" : rank === 3 ? "🥉 3" : `#${rank}`;
 
                     const player = document.createElement("span");
                     player.className = "leader-player-v10";
+                    player.style.minWidth = "0";
+                    player.style.overflow = "hidden";
+                    player.style.textOverflow = "ellipsis";
+                    player.style.whiteSpace = "nowrap";
                     player.textContent = displayPlayerName(leader);
 
                     const adp = document.createElement("span");
@@ -2059,6 +2064,10 @@
             const list = document.getElementById("previous-week-list");
             const range = document.getElementById("previous-week-range");
 
+            list.style.display = "flex";
+            list.style.flexDirection = "column";
+            list.style.gap = "6px";
+
             modal.style.display = "flex";
             range.textContent = "🧪 DEMO — реальные данные не изменяются";
             list.innerHTML = '<div class="leader-item"><span>Загрузка демо...</span></div>';
@@ -2067,13 +2076,25 @@
                 const data = await loadWeeklyDemoData();
 
                 range.textContent =
-                    `🧪 DEMO · ${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)}`;
+                    `🧪 DEMO v10.7.2 · ${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)}`;
 
                 list.innerHTML = "";
 
                 data.public_winners.forEach((leader) => {
                     const item = document.createElement("div");
                     item.className = "previous-row-v10";
+
+                    // Форсируем сетку прямо на элементе.
+                    // Это защищает от старого CSS-кэша Telegram WebView.
+                    item.style.display = "grid";
+                    item.style.gridTemplateColumns = "48px minmax(0, 1fr) 82px";
+                    item.style.gap = "8px";
+                    item.style.alignItems = "center";
+                    item.style.background = "rgba(255,255,255,0.035)";
+                    item.style.border = "1px solid rgba(255,255,255,0.04)";
+                    item.style.borderRadius = "12px";
+                    item.style.padding = "10px";
+                    item.style.minHeight = "38px";
 
                     const place = document.createElement("span");
                     place.className = "leader-place-v10";
@@ -2090,6 +2111,10 @@
 
                     const score = document.createElement("span");
                     score.className = "leader-adp-v10";
+                    score.style.textAlign = "right";
+                    score.style.whiteSpace = "nowrap";
+                    score.style.color = "var(--accent-green)";
+                    score.style.fontWeight = "800";
                     score.textContent =
                         Number(leader.final_adp || 0).toLocaleString("ru-RU");
 

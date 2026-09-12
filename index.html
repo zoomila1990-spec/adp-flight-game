@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.8.2: payout history status consistency -->
+    <!-- v10.9: Community chat + one-time 10 ADP reward -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -680,6 +680,54 @@
             cursor: default;
         }
 
+
+        .community-card {
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            background: linear-gradient(
+                135deg,
+                rgba(56, 189, 248, 0.10),
+                rgba(0, 255, 204, 0.055)
+            );
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .community-reward {
+            color: var(--accent-green);
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 6px;
+        }
+
+        .community-text {
+            color: #cbd5e1;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        .community-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .community-status {
+            border-radius: 12px;
+            padding: 10px 12px;
+            font-size: 11px;
+            line-height: 1.45;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .community-status.success {
+            color: #b9fff1;
+            border-color: rgba(0,255,204,0.20);
+            background: rgba(0,255,204,0.06);
+        }
+
         /* ---------------------------------------------------------
            ИГРОВОЙ ЭКРАН
            --------------------------------------------------------- */
@@ -1044,6 +1092,10 @@
                     👛 Подключить TON
                 </button>
             </div>
+
+            <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
+                💬 Присоединиться в чат (+10 ADP)
+            </button>
         </div>
     </div>
 
@@ -1288,6 +1340,43 @@
 
 
     <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: COMMUNITY +10 ADP
+         ========================================================= -->
+    <div class="modal" id="modal-community">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💬 ADP Flight League Community</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="community-card">
+                    <div class="community-reward" id="community-reward-title">+10 ADP</div>
+                    <div class="community-text">
+                        Вступите в официальный чат пилотов ADP Flight League.
+                        После вступления вернитесь сюда и нажмите
+                        «Проверить вступление». Бонус выдаётся один раз на Telegram-аккаунт.
+                    </div>
+                </div>
+
+                <div class="community-actions">
+                    <button class="btn btn-secondary" onclick="joinCommunityChat()">
+                        💬 Открыть официальный чат
+                    </button>
+
+                    <button class="btn btn-play" id="btn-community-claim" onclick="claimCommunityBonus()">
+                        ✅ Проверить вступление (+10 ADP)
+                    </button>
+                </div>
+
+                <div class="community-status" id="community-status">
+                    Сначала вступите в чат, затем вернитесь в приложение для проверки.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
          МОДАЛЬНОЕ ОКНО: РЕФЕРАЛЫ
          ========================================================= -->
     <div class="modal" id="modal-referral">
@@ -1464,12 +1553,20 @@
                 activated: 0,
                 pending: 0,
                 earned_adp: 0
+            },
+            community: {
+                url: "",
+                username: "",
+                reward: 10,
+                claimed: false,
+                claimed_at: 0
             }
         };
 
         let adTimerInterval = null;
         let adsgramController = null;
         let adShowInProgress = false;
+        let communityClaimInProgress = false;
 
         let tonConnectUI = null;
         let tonConnectionRestored = false;
@@ -1561,6 +1658,14 @@
                     userData.ton_wallet_verified_at = Number(data.user.ton_wallet_verified_at || 0);
                     applyReferralData(data.referral);
 
+                    userData.community = {
+                        url: data.community?.url || "",
+                        username: data.community?.username || "",
+                        reward: Number(data.community?.reward || 10),
+                        claimed: Boolean(data.community?.claimed),
+                        claimed_at: Number(data.community?.claimed_at || 0)
+                    };
+
                     updateUI();
                     startAdCooldownTimer();
                     return true;
@@ -1586,6 +1691,203 @@
             }
 
             updateWalletButton();
+            updateCommunityButton();
+        }
+
+        function updateCommunityButton() {
+            const button = document.getElementById("btn-community");
+            if (!button) return;
+
+            button.innerHTML = userData.community?.claimed
+                ? "✅ Чат: +10 ADP получено"
+                : "💬 Присоединиться в чат (+10 ADP)";
+        }
+
+        function renderCommunityModal() {
+            const claimed = Boolean(userData.community?.claimed);
+            const reward = Number(userData.community?.reward || 10);
+
+            const rewardTitle =
+                document.getElementById("community-reward-title");
+            const claimButton =
+                document.getElementById("btn-community-claim");
+            const status =
+                document.getElementById("community-status");
+
+            rewardTitle.textContent = claimed
+                ? "✅ Бонус получен"
+                : `+${reward} ADP`;
+
+            claimButton.disabled =
+                claimed || communityClaimInProgress;
+
+            claimButton.textContent = claimed
+                ? "✅ Бонус уже получен"
+                : communityClaimInProgress
+                    ? "⏳ Проверяем..."
+                    : `✅ Проверить вступление (+${reward} ADP)`;
+
+            status.classList.toggle("success", claimed);
+
+            status.textContent = claimed
+                ? "✅ Вступление подтверждено. Community-бонус уже был начислен этому Telegram-аккаунту."
+                : "Сначала вступите в официальный чат, затем вернитесь сюда и нажмите «Проверить вступление».";
+
+            updateCommunityButton();
+        }
+
+        function openCommunity() {
+            haptic("light");
+            closeModals();
+            renderCommunityModal();
+            document.getElementById("modal-community").style.display = "flex";
+        }
+
+        function joinCommunityChat() {
+            haptic("light");
+
+            const url = String(
+                userData.community?.url || ""
+            ).trim();
+
+            if (!url) {
+                showAlert(
+                    "Ссылка на официальный чат пока недоступна."
+                );
+                return;
+            }
+
+            if (tg?.openTelegramLink) {
+                tg.openTelegramLink(url);
+                return;
+            }
+
+            window.open(
+                url,
+                "_blank",
+                "noopener,noreferrer"
+            );
+        }
+
+        async function claimCommunityBonus() {
+            if (communityClaimInProgress) return;
+
+            if (!telegramInitData) {
+                showAlert(
+                    "Откройте ADP Flight League через Telegram."
+                );
+                return;
+            }
+
+            if (userData.community?.claimed) {
+                renderCommunityModal();
+                return;
+            }
+
+            communityClaimInProgress = true;
+            renderCommunityModal();
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/community/claim`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            ...NGROK_SKIP_HEADERS
+                        },
+                        body: JSON.stringify({
+                            init_data: telegramInitData
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(
+                        data.detail ||
+                        "Не удалось проверить вступление."
+                    );
+                }
+
+                if (
+                    !data.success &&
+                    data.reason === "not_member"
+                ) {
+                    const status =
+                        document.getElementById(
+                            "community-status"
+                        );
+
+                    status.classList.remove("success");
+                    status.textContent =
+                        "❗ Telegram пока не видит вас участником чата. Вступите в группу и нажмите «Проверить вступление» ещё раз.";
+                    haptic("light");
+                    return;
+                }
+
+                if (!data.success) {
+                    throw new Error(
+                        data.reason ||
+                        "Не удалось начислить Community-бонус."
+                    );
+                }
+
+                userData.weekly_score = Number(
+                    data.weekly_score ??
+                    userData.weekly_score
+                );
+
+                if (data.community) {
+                    userData.community = {
+                        url:
+                            data.community.url ||
+                            userData.community.url ||
+                            "",
+                        username:
+                            data.community.username || "",
+                        reward: Number(
+                            data.community.reward || 10
+                        ),
+                        claimed: Boolean(
+                            data.community.claimed
+                        ),
+                        claimed_at: Number(
+                            data.community.claimed_at || 0
+                        )
+                    };
+                } else {
+                    userData.community.claimed = true;
+                }
+
+                updateUI();
+                renderCommunityModal();
+                await loadWeeklySummary();
+
+                haptic("medium");
+
+                showAlert(
+                    data.already_claimed
+                        ? "✅ Community-бонус уже был получен ранее."
+                        : `🎉 Вступление подтверждено! +${Number(data.reward || 10)} ADP начислено.`
+                );
+
+            } catch (error) {
+                console.error(
+                    "Ошибка Community Bonus:",
+                    error
+                );
+
+                showAlert(
+                    error.message ||
+                    "Не удалось проверить вступление в чат."
+                );
+
+            } finally {
+                communityClaimInProgress = false;
+                renderCommunityModal();
+            }
         }
 
         function shortenTonAddress(address) {
@@ -2853,6 +3155,7 @@
             document.getElementById("modal-admin-payouts").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
+            document.getElementById("modal-community").style.display = "none";
         }
 
         /* =========================================================

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.5: weekly league + 100% prize pool distribution -->
+    <!-- v10.6: previous winners + admin manual payouts -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -544,6 +544,95 @@
             text-transform: uppercase;
         }
 
+
+        .previous-week-range {
+            margin-bottom: 10px;
+            padding: 9px 11px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.035);
+            color: var(--text-muted);
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .admin-payout-list {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+
+        .admin-payout-card {
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.035);
+            border-radius: 14px;
+            padding: 11px;
+        }
+
+        .admin-payout-top {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr) auto;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .admin-payout-player {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .admin-payout-amount {
+            color: var(--accent-yellow);
+            font-size: 12px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .admin-payout-address {
+            margin-top: 8px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            font-size: 10px;
+            line-height: 1.35;
+            color: #cbd5e1;
+            overflow-wrap: anywhere;
+        }
+
+        .admin-payout-meta {
+            margin-top: 7px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .admin-payout-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 7px;
+            margin-top: 9px;
+        }
+
+        .admin-mini-btn {
+            border: 1px solid rgba(255,255,255,0.09);
+            background: rgba(255,255,255,0.055);
+            color: #fff;
+            border-radius: 10px;
+            padding: 9px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .admin-mini-btn:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+
         /* ---------------------------------------------------------
            ИГРОВОЙ ЭКРАН
            --------------------------------------------------------- */
@@ -958,6 +1047,9 @@
             </div>
 
             <div class="modal-body">
+                <div class="previous-week-range" id="previous-week-range">
+                    Последняя завершённая неделя
+                </div>
                 <div class="previous-table-head">
                     <span>Место</span>
                     <span>Игрок</span>
@@ -1003,10 +1095,40 @@
                     <button class="btn btn-secondary" onclick="runVirtualTop10Test()">
                         🧮 Проверить полный Top-10
                     </button>
+                    <button class="btn btn-secondary" onclick="openAdminPayouts()">
+                        💸 Выплаты прошлой недели
+                    </button>
                     <div class="fund-edit-help">
                         Тест использует настоящий алгоритм закрытия, но затем полностью
                         откатывает транзакцию. ADP, фонд и текущая неделя не изменятся.
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: ВЫПЛАТЫ ПРОШЛОЙ НЕДЕЛИ (ADMIN)
+         ========================================================= -->
+    <div class="modal" id="modal-admin-payouts">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💸 Выплаты победителям</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="preview-safe-note">
+                    🔒 Этот раздел виден только администратору.
+                    Здесь будут TON-адреса, суммы и статус выплат победителям.
+                </div>
+
+                <div class="previous-week-range" id="admin-payout-week">
+                    Загрузка последней завершённой недели...
+                </div>
+
+                <div class="admin-payout-list" id="admin-payout-list">
+                    <div class="leader-item"><span>Загрузка...</span></div>
                 </div>
             </div>
         </div>
@@ -1844,6 +1966,14 @@
 
                 list.innerHTML = "";
 
+                const range = document.getElementById("previous-week-range");
+                if (data.available && data.week) {
+                    range.textContent =
+                        `${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)}`;
+                } else {
+                    range.textContent = "Завершённых недель пока нет";
+                }
+
                 if (!data.available || !Array.isArray(data.leaders) || data.leaders.length === 0) {
                     const empty = document.createElement("div");
                     empty.className = "leader-item";
@@ -1878,6 +2008,213 @@
                 list.innerHTML = '<div class="leader-item"><span>Ошибка соединения с сервером</span></div>';
             }
         }
+
+        function formatWeekDate(timestampSeconds) {
+            const date = new Date(Number(timestampSeconds || 0) * 1000);
+            if (Number.isNaN(date.getTime())) return "—";
+
+            return date.toLocaleDateString("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                timeZone: "UTC"
+            });
+        }
+
+        async function copyTextValue(value, successMessage) {
+            try {
+                await navigator.clipboard.writeText(String(value || ""));
+                haptic("light");
+                showAlert(successMessage || "Скопировано.");
+            } catch (error) {
+                console.error("Clipboard error:", error);
+                showAlert("Не удалось скопировать автоматически.");
+            }
+        }
+
+        async function openAdminPayouts() {
+            if (!userData.is_admin) {
+                showAlert("Раздел выплат доступен только администратору.");
+                return;
+            }
+
+            haptic("light");
+            closeModals();
+
+            const modal = document.getElementById("modal-admin-payouts");
+            const weekInfo = document.getElementById("admin-payout-week");
+            const list = document.getElementById("admin-payout-list");
+
+            modal.style.display = "flex";
+            weekInfo.textContent = "Загрузка последней завершённой недели...";
+            list.innerHTML = '<div class="leader-item"><span>Загрузка...</span></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/weekly-payouts`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...NGROK_SKIP_HEADERS
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.detail || "Не удалось загрузить выплаты."
+                    );
+                }
+
+                if (!data.available || !data.week) {
+                    weekInfo.textContent = "Завершённых недель пока нет";
+                    list.innerHTML =
+                        '<div class="leader-item"><span>После первого реального закрытия недели здесь появятся победители, адреса и суммы.</span></div>';
+                    return;
+                }
+
+                weekInfo.textContent =
+                    `${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)} · фонд ${data.week.prize_pool_ton} TON`;
+
+                list.innerHTML = "";
+
+                if (!Array.isArray(data.payouts) || data.payouts.length === 0) {
+                    list.innerHTML =
+                        '<div class="leader-item"><span>В этой неделе нет выплат.</span></div>';
+                    return;
+                }
+
+                data.payouts.forEach((item) => {
+                    const card = document.createElement("div");
+                    card.className = "admin-payout-card";
+
+                    const top = document.createElement("div");
+                    top.className = "admin-payout-top";
+
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    const rank = Number(item.rank || 0);
+                    place.textContent =
+                        rank === 1 ? "🥇 1" :
+                        rank === 2 ? "🥈 2" :
+                        rank === 3 ? "🥉 3" :
+                        `#${rank}`;
+
+                    const player = document.createElement("span");
+                    player.className = "admin-payout-player";
+                    player.textContent = displayPlayerName(item);
+
+                    const amount = document.createElement("span");
+                    amount.className = "admin-payout-amount";
+                    amount.textContent = `${item.prize_ton} TON`;
+
+                    top.append(place, player, amount);
+
+                    const address = document.createElement("div");
+                    address.className = "admin-payout-address";
+                    address.textContent =
+                        item.wallet_address ||
+                        "TON-кошелёк не был сохранён при закрытии недели";
+
+                    const meta = document.createElement("div");
+                    meta.className = "admin-payout-meta";
+
+                    const verificationText = item.wallet_verified
+                        ? "✅ TON Proof"
+                        : "⚠️ Кошелёк не подтверждён";
+
+                    const payoutText = item.payout_status === "paid"
+                        ? "✅ Выплачено"
+                        : "⏳ Ожидает выплаты";
+
+                    meta.textContent =
+                        `${verificationText} · ${payoutText} · ${Number(item.final_adp || 0).toLocaleString("ru-RU")} ADP`;
+
+                    const actions = document.createElement("div");
+                    actions.className = "admin-payout-actions";
+
+                    const copyButton = document.createElement("button");
+                    copyButton.className = "admin-mini-btn";
+                    copyButton.textContent = "📋 Копировать адрес";
+                    copyButton.disabled = !item.wallet_address;
+                    copyButton.onclick = () =>
+                        copyTextValue(
+                            item.wallet_address,
+                            "TON-адрес скопирован."
+                        );
+
+                    const paidButton = document.createElement("button");
+                    paidButton.className = "admin-mini-btn";
+                    paidButton.textContent =
+                        item.payout_status === "paid"
+                        ? "✅ Выплачено"
+                        : "✓ Отметить выплаченным";
+                    paidButton.disabled =
+                        item.payout_status === "paid" ||
+                        !item.wallet_verified ||
+                        !item.wallet_address;
+
+                    paidButton.onclick = async () => {
+                        const confirmed = await askConfirm(
+                            `Подтвердить, что ${item.prize_ton} TON уже отправлены игроку ${displayPlayerName(item)}?`
+                        );
+
+                        if (!confirmed) return;
+
+                        try {
+                            const markResponse = await fetch(
+                                `${API_URL}/api/admin/weekly-payouts/mark-paid`,
+                                {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                        ...NGROK_SKIP_HEADERS
+                                    },
+                                    body: JSON.stringify({
+                                        init_data: telegramInitData,
+                                        week_id: data.week.id,
+                                        telegram_id: item.telegram_id,
+                                        tx_hash: ""
+                                    })
+                                }
+                            );
+
+                            const markData = await markResponse.json();
+
+                            if (!markResponse.ok || !markData.success) {
+                                throw new Error(
+                                    markData.detail ||
+                                    "Не удалось отметить выплату."
+                                );
+                            }
+
+                            await openAdminPayouts();
+
+                        } catch (error) {
+                            console.error("Ошибка отметки выплаты:", error);
+                            showAlert(
+                                error.message ||
+                                "Не удалось изменить статус выплаты."
+                            );
+                        }
+                    };
+
+                    actions.append(copyButton, paidButton);
+                    card.append(top, address, meta, actions);
+                    list.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Ошибка загрузки выплат:", error);
+                weekInfo.textContent = "Ошибка";
+                list.innerHTML =
+                    `<div class="leader-item"><span>${error.message || "Ошибка соединения с сервером"}</span></div>`;
+            }
+        }
+
 
         function openPrizePoolEditor() {
             haptic("light");
@@ -2159,6 +2496,7 @@
             document.getElementById("modal-prize-pool").style.display = "none";
             document.getElementById("modal-weekly-close-preview").style.display = "none";
             document.getElementById("modal-virtual-top10").style.display = "none";
+            document.getElementById("modal-admin-payouts").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
         }

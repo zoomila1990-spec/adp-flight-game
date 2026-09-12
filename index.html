@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.11: Contextual help icons instead of one long instruction -->
+    <!-- v10.12: Clean admin UI — demo/test controls hidden -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1421,29 +1421,12 @@
                         placeholder="Например: 20"
                     >
                     <div class="fund-edit-help">
-                        Изменение применяется только к текущей неделе.
-                        При создании следующей недели текущее значение переносится как стартовое и его можно снова изменить.
+                        Укажите актуальный призовой фонд текущей недели.
                     </div>
                     <button class="btn btn-play" onclick="savePrizePool()">💾 Сохранить фонд</button>
-                    <button class="btn btn-secondary" onclick="runWeeklyClosePreview()">
-                        🧪 Проверить закрытие недели
-                    </button>
-                    <button class="btn btn-secondary" onclick="runVirtualTop10Test()">
-                        🧮 Проверить полный Top-10
-                    </button>
                     <button class="btn btn-secondary" onclick="openAdminPayouts()">
                         💸 Выплаты прошлой недели
                     </button>
-                    <button class="btn btn-secondary" onclick="openPreviousWeekDemo()">
-                        🧪 Демо победителей прошлой недели
-                    </button>
-                    <button class="btn btn-secondary" onclick="openAdminPayoutsDemo()">
-                        🧪 Демо панели выплат
-                    </button>
-                    <div class="fund-edit-help">
-                        Тест использует настоящий алгоритм закрытия, но затем полностью
-                        откатывает транзакцию. ADP, фонд и текущая неделя не изменятся.
-                    </div>
                 </div>
             </div>
         </div>

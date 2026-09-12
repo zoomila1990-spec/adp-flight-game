@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.6: previous winners + admin manual payouts -->
+    <!-- v10.7: previous winners + payouts + safe UI demo -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1098,6 +1098,12 @@
                     <button class="btn btn-secondary" onclick="openAdminPayouts()">
                         💸 Выплаты прошлой недели
                     </button>
+                    <button class="btn btn-secondary" onclick="openPreviousWeekDemo()">
+                        🧪 Демо победителей прошлой недели
+                    </button>
+                    <button class="btn btn-secondary" onclick="openAdminPayoutsDemo()">
+                        🧪 Демо панели выплат
+                    </button>
                     <div class="fund-edit-help">
                         Тест использует настоящий алгоритм закрытия, но затем полностью
                         откатывает транзакцию. ADP, фонд и текущая неделя не изменятся.
@@ -2008,6 +2014,173 @@
                 list.innerHTML = '<div class="leader-item"><span>Ошибка соединения с сервером</span></div>';
             }
         }
+
+        async function loadWeeklyDemoData() {
+            const response = await fetch(`${API_URL}/api/admin/weekly-demo`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    ...NGROK_SKIP_HEADERS
+                },
+                body: JSON.stringify({
+                    init_data: telegramInitData
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.detail || "Не удалось загрузить демо недели."
+                );
+            }
+
+            return data;
+        }
+
+        async function openPreviousWeekDemo() {
+            if (!userData.is_admin) {
+                showAlert("Демо доступно только администратору.");
+                return;
+            }
+
+            haptic("light");
+            closeModals();
+
+            const modal = document.getElementById("modal-previous-week");
+            const list = document.getElementById("previous-week-list");
+            const range = document.getElementById("previous-week-range");
+
+            modal.style.display = "flex";
+            range.textContent = "🧪 DEMO — реальные данные не изменяются";
+            list.innerHTML = '<div class="leader-item"><span>Загрузка демо...</span></div>';
+
+            try {
+                const data = await loadWeeklyDemoData();
+
+                range.textContent =
+                    `🧪 DEMO · ${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)}`;
+
+                list.innerHTML = "";
+
+                data.public_winners.forEach((leader) => {
+                    const item = document.createElement("div");
+                    item.className = "previous-row";
+
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    const rank = Number(leader.rank || 0);
+                    place.textContent =
+                        rank === 1 ? "🥇 1" :
+                        rank === 2 ? "🥈 2" :
+                        rank === 3 ? "🥉 3" :
+                        `#${rank}`;
+
+                    const player = document.createElement("span");
+                    player.className = "previous-player";
+                    player.textContent = displayPlayerName(leader);
+
+                    const score = document.createElement("span");
+                    score.className = "previous-score";
+                    score.textContent =
+                        Number(leader.final_adp || 0).toLocaleString("ru-RU");
+
+                    item.append(place, player, score);
+                    list.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error("Ошибка демо прошлой недели:", error);
+                list.innerHTML =
+                    `<div class="leader-item"><span>${error.message || "Ошибка"}</span></div>`;
+            }
+        }
+
+        async function openAdminPayoutsDemo() {
+            if (!userData.is_admin) {
+                showAlert("Демо доступно только администратору.");
+                return;
+            }
+
+            haptic("light");
+            closeModals();
+
+            const modal = document.getElementById("modal-admin-payouts");
+            const weekInfo = document.getElementById("admin-payout-week");
+            const list = document.getElementById("admin-payout-list");
+
+            modal.style.display = "flex";
+            weekInfo.textContent = "🧪 DEMO — реальные выплаты не изменяются";
+            list.innerHTML = '<div class="leader-item"><span>Загрузка демо...</span></div>';
+
+            try {
+                const data = await loadWeeklyDemoData();
+
+                weekInfo.textContent =
+                    `🧪 DEMO · ${formatWeekDate(data.week.start_ts)} — ${formatWeekDate(data.week.end_ts - 1)} · фонд ${data.week.prize_pool_ton} TON`;
+
+                list.innerHTML = "";
+
+                data.payouts.forEach((item) => {
+                    const card = document.createElement("div");
+                    card.className = "admin-payout-card";
+
+                    const top = document.createElement("div");
+                    top.className = "admin-payout-top";
+
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    const rank = Number(item.rank || 0);
+                    place.textContent =
+                        rank === 1 ? "🥇 1" :
+                        rank === 2 ? "🥈 2" :
+                        rank === 3 ? "🥉 3" :
+                        `#${rank}`;
+
+                    const player = document.createElement("span");
+                    player.className = "admin-payout-player";
+                    player.textContent = displayPlayerName(item);
+
+                    const amount = document.createElement("span");
+                    amount.className = "admin-payout-amount";
+                    amount.textContent = `${item.prize_ton} TON`;
+
+                    top.append(place, player, amount);
+
+                    const address = document.createElement("div");
+                    address.className = "admin-payout-address";
+                    address.textContent = item.wallet_address;
+
+                    const meta = document.createElement("div");
+                    meta.className = "admin-payout-meta";
+                    meta.textContent =
+                        `🧪 DEMO · ✅ TON Proof · ⏳ Ожидает выплаты · ${Number(item.final_adp || 0).toLocaleString("ru-RU")} ADP`;
+
+                    const actions = document.createElement("div");
+                    actions.className = "admin-payout-actions";
+
+                    const copyButton = document.createElement("button");
+                    copyButton.className = "admin-mini-btn";
+                    copyButton.textContent = "📋 Адрес (DEMO)";
+                    copyButton.disabled = true;
+
+                    const paidButton = document.createElement("button");
+                    paidButton.className = "admin-mini-btn";
+                    paidButton.textContent = "✓ Выплата (DEMO)";
+                    paidButton.disabled = true;
+
+                    actions.append(copyButton, paidButton);
+                    card.append(top, address, meta, actions);
+                    list.appendChild(card);
+                });
+
+            } catch (error) {
+                console.error("Ошибка демо выплат:", error);
+                list.innerHTML =
+                    `<div class="leader-item"><span>${error.message || "Ошибка"}</span></div>`;
+            }
+        }
+
 
         function formatWeekDate(timestampSeconds) {
             const date = new Date(Number(timestampSeconds || 0) * 1000);

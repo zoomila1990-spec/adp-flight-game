@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v9: TON Proof ownership verification -->
+    <!-- v10: weekly league + prize pool + previous-week winners -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -300,6 +300,181 @@
             color: var(--accent-green);
             font-weight: 700;
             white-space: nowrap;
+        }
+
+
+        /* =========================================================
+           WEEKLY LEAGUE v10
+           ========================================================= */
+
+        .weekly-summary {
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.10), rgba(0, 255, 204, 0.06));
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            border-radius: 16px;
+            padding: 12px 14px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .weekly-summary-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .weekly-summary-label {
+            color: var(--text-muted);
+        }
+
+        .weekly-summary-value {
+            color: #ffffff;
+            font-weight: 800;
+            text-align: right;
+        }
+
+        .weekly-fund-value {
+            color: var(--accent-yellow);
+        }
+
+        .admin-fund-btn {
+            display: none;
+            border: 1px solid rgba(250, 204, 21, 0.35);
+            background: rgba(250, 204, 21, 0.10);
+            color: var(--accent-yellow);
+            border-radius: 9px;
+            padding: 5px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-left: 7px;
+        }
+
+        .previous-week-banner {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .previous-week-banner:active {
+            transform: scale(0.985);
+        }
+
+        .previous-week-title {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .previous-week-subtitle {
+            color: var(--text-muted);
+            font-size: 11px;
+            margin-top: 2px;
+        }
+
+        .leader-table-head,
+        .leader-row-v10 {
+            display: grid;
+            grid-template-columns: 42px minmax(0, 1fr) 72px 52px;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .leader-table-head {
+            padding: 0 10px 4px;
+            color: var(--text-muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .leader-row-v10 {
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .leader-place-v10 {
+            color: var(--accent-yellow);
+            font-weight: 800;
+        }
+
+        .leader-player-v10 {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #ffffff;
+        }
+
+        .leader-adp-v10 {
+            color: var(--accent-green);
+            font-weight: 800;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .leader-share-v10 {
+            color: #93c5fd;
+            font-weight: 700;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .previous-table-head,
+        .previous-row-v10 {
+            display: grid;
+            grid-template-columns: 48px minmax(0, 1fr) 82px;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .previous-table-head {
+            padding: 0 10px 4px;
+            color: var(--text-muted);
+            font-size: 10px;
+            text-transform: uppercase;
+        }
+
+        .previous-row-v10 {
+            background: rgba(255, 255, 255, 0.035);
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .fund-edit-card {
+            display: grid;
+            gap: 10px;
+        }
+
+        .fund-edit-card label {
+            color: var(--text-muted);
+            font-size: 12px;
+        }
+
+        .fund-edit-input {
+            width: 100%;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ffffff;
+            border-radius: 12px;
+            padding: 13px 14px;
+            font-size: 18px;
+            outline: none;
+        }
+
+        .fund-edit-help {
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.4;
         }
 
         /* ---------------------------------------------------------
@@ -606,8 +781,8 @@
             <div class="lb-left">
                 <div class="lb-icon">🏆</div>
                 <div class="lb-info">
-                    <h3>Топ-30 Лидеров</h3>
-                    <p>Рейтинг пилотов недели</p>
+                    <h3>Топ-10 пилотов</h3>
+                    <p>Текущий рейтинг недели</p>
                 </div>
             </div>
 
@@ -616,6 +791,32 @@
                 onclick="event.stopPropagation(); openRules();"
                 aria-label="Правила и награды"
             >?</button>
+        </div>
+
+        <div class="weekly-summary">
+            <div class="weekly-summary-row">
+                <span class="weekly-summary-label">🏆 Общий призовой фонд</span>
+                <span class="weekly-summary-value weekly-fund-value">
+                    <span id="weekly-prize-pool">—</span> TON
+                    <button
+                        class="admin-fund-btn"
+                        id="admin-fund-btn"
+                        onclick="openPrizePoolEditor()"
+                    >✏️ Изменить</button>
+                </span>
+            </div>
+            <div class="weekly-summary-row">
+                <span class="weekly-summary-label">⏳ До фиксации рейтинга</span>
+                <span class="weekly-summary-value" id="weekly-countdown">—</span>
+            </div>
+        </div>
+
+        <div class="previous-week-banner" id="previous-week-banner" onclick="openPreviousWeek()">
+            <div>
+                <div class="previous-week-title">🏅 Победители прошлой недели</div>
+                <div class="previous-week-subtitle" id="previous-week-subtitle">Загрузка...</div>
+            </div>
+            <div style="color: var(--text-muted); font-size: 18px;">›</div>
         </div>
 
         <div class="menu-grid">
@@ -644,18 +845,91 @@
     </div>
 
     <!-- =========================================================
-         МОДАЛЬНОЕ ОКНО: TOP-30
+         МОДАЛЬНОЕ ОКНО: ТЕКУЩИЙ TOP-10
          ========================================================= -->
     <div class="modal" id="modal-leaderboard">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🏆 Топ-30 Пилотов</h3>
+                <h3>🏆 Топ-10 пилотов</h3>
                 <button class="close-modal" onclick="closeModals()">✕</button>
             </div>
 
-            <div class="modal-body" id="leaderboard-list">
-                <div class="leader-item">
-                    <span>Загрузка рейтинга...</span>
+            <div class="modal-body">
+                <div class="weekly-summary" style="margin-bottom: 4px;">
+                    <div class="weekly-summary-row">
+                        <span class="weekly-summary-label">Призовой фонд</span>
+                        <span class="weekly-summary-value weekly-fund-value"><span id="modal-prize-pool-value">—</span> TON</span>
+                    </div>
+                    <div class="weekly-summary-row">
+                        <span class="weekly-summary-label">До фиксации</span>
+                        <span class="weekly-summary-value" id="modal-weekly-countdown">—</span>
+                    </div>
+                </div>
+
+                <div class="leader-table-head">
+                    <span>Место</span>
+                    <span>Игрок</span>
+                    <span style="text-align:right;">ADP</span>
+                    <span style="text-align:right;">Доля</span>
+                </div>
+
+                <div id="leaderboard-list">
+                    <div class="leader-item"><span>Загрузка рейтинга...</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: ПРОШЛАЯ НЕДЕЛЯ
+         ========================================================= -->
+    <div class="modal" id="modal-previous-week">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🏅 Победители прошлой недели</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="previous-table-head">
+                    <span>Место</span>
+                    <span>Игрок</span>
+                    <span style="text-align:right;">ADP</span>
+                </div>
+                <div id="previous-week-list">
+                    <div class="leader-item"><span>Загрузка...</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: ИЗМЕНЕНИЕ ПРИЗОВОГО ФОНДА (ADMIN)
+         ========================================================= -->
+    <div class="modal" id="modal-prize-pool">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✏️ Призовой фонд недели</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="fund-edit-card">
+                    <label for="prize-pool-input">Общий фонд в TON</label>
+                    <input
+                        class="fund-edit-input"
+                        id="prize-pool-input"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        inputmode="decimal"
+                        placeholder="Например: 20"
+                    >
+                    <div class="fund-edit-help">
+                        Изменение применяется только к текущей неделе.
+                        При создании следующей недели текущее значение переносится как стартовое и его можно снова изменить.
+                    </div>
+                    <button class="btn btn-play" onclick="savePrizePool()">💾 Сохранить фонд</button>
                 </div>
             </div>
         </div>
@@ -674,12 +948,12 @@
             <div class="modal-body">
                 <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5;">
                     Участвуйте в еженедельной гонке ADP Flight League.
-                    Зарабатывайте ADP в полетах и за просмотр рекламы.
+                    Зарабатывайте ADP в полетах, за просмотр рекламы и рефералов. ADP одновременно является вашим недельным балансом и местом в рейтинге.
                 </p>
 
                 <div style="background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); padding: 12px; border-radius: 12px; margin-top: 8px;">
                     <p style="color: var(--accent-yellow); font-size: 14px; font-weight: bold;">
-                        Топ-10 игроков в конце недели разделят призовой фонд в TON!
+                        Каждую неделю рейтинг фиксируется в понедельник в 00:00 UTC. После фиксации ADP всех игроков обнуляется. Доли Top-10: 30% / 20% / 10% / 5% / 3% / далее по 1%.
                     </p>
                 </div>
             </div>
@@ -870,6 +1144,17 @@
         let tonConnectInitiatedByUser = false;
         let tonProofVerificationInProgress = false;
         let tonProofReconnectRequested = false;
+
+
+        let weeklyState = {
+            serverOffsetMs: 0,
+            weekEndTs: 0,
+            prizePoolTon: "0",
+            topN: 10,
+            previousWeekAvailable: false
+        };
+        let weeklyTimerInterval = null;
+        let weeklyBoundaryRefreshInProgress = false;
 
         function getAdsgramController() {
             if (adsgramController) {
@@ -1204,64 +1489,284 @@
         }
 
         /* =========================================================
-           TOP-30 И ПРАВИЛА
+           НЕДЕЛЬНЫЙ РЕЙТИНГ v10
            ========================================================= */
 
-        async function openLeaderboard() {
-            haptic("light");
+        function displayPlayerName(player) {
+            const username = String(player?.username || "").trim();
+            if (username) return `@${username}`;
+            return String(player?.first_name || "Пилот");
+        }
 
-            document.getElementById("modal-leaderboard").style.display = "flex";
+        function formatCountdown(totalSeconds) {
+            const seconds = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
 
-            const listContainer = document.getElementById("leaderboard-list");
-            listContainer.innerHTML = "";
+            if (days > 0) {
+                return `${days}д ${String(hours).padStart(2, "0")}ч ${String(minutes).padStart(2, "0")}м ${String(secs).padStart(2, "0")}с`;
+            }
 
-            const loading = document.createElement("div");
-            loading.className = "leader-item";
-            loading.textContent = "Загрузка рейтинга...";
-            listContainer.appendChild(loading);
+            return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+        }
 
+        function renderWeeklyCountdown() {
+            const mainTimer = document.getElementById("weekly-countdown");
+            const modalTimer = document.getElementById("modal-weekly-countdown");
+
+            if (!weeklyState.weekEndTs) {
+                if (mainTimer) mainTimer.innerText = "—";
+                if (modalTimer) modalTimer.innerText = "—";
+                return;
+            }
+
+            const serverNowMs = Date.now() + weeklyState.serverOffsetMs;
+            const remainingSeconds = Math.floor(
+                (weeklyState.weekEndTs * 1000 - serverNowMs) / 1000
+            );
+
+            if (remainingSeconds <= 0) {
+                if (mainTimer) mainTimer.innerText = "Фиксируем рейтинг...";
+                if (modalTimer) modalTimer.innerText = "Фиксируем рейтинг...";
+
+                if (!weeklyBoundaryRefreshInProgress) {
+                    weeklyBoundaryRefreshInProgress = true;
+                    setTimeout(async () => {
+                        try {
+                            await loadWeeklySummary();
+                            await syncUser();
+                        } finally {
+                            weeklyBoundaryRefreshInProgress = false;
+                        }
+                    }, 1200);
+                }
+                return;
+            }
+
+            const text = formatCountdown(remainingSeconds);
+            if (mainTimer) mainTimer.innerText = text;
+            if (modalTimer) modalTimer.innerText = text;
+        }
+
+        function startWeeklyCountdown() {
+            if (weeklyTimerInterval) {
+                clearInterval(weeklyTimerInterval);
+            }
+
+            renderWeeklyCountdown();
+            weeklyTimerInterval = setInterval(renderWeeklyCountdown, 1000);
+        }
+
+        function applyWeeklyResponse(data) {
+            if (!data?.success || !data.week) return false;
+
+            weeklyState.serverOffsetMs = Number(data.server_time || 0) * 1000 - Date.now();
+            weeklyState.weekEndTs = Number(data.week.end_ts || 0);
+            weeklyState.prizePoolTon = String(data.week.prize_pool_ton ?? "0");
+            weeklyState.topN = Number(data.week.top_n || 10);
+            weeklyState.previousWeekAvailable = Boolean(data.previous_week_available);
+
+            const mainPool = document.getElementById("weekly-prize-pool");
+            const modalPool = document.getElementById("modal-prize-pool-value");
+            const previousSubtitle = document.getElementById("previous-week-subtitle");
+            const adminButton = document.getElementById("admin-fund-btn");
+
+            if (mainPool) mainPool.innerText = weeklyState.prizePoolTon;
+            if (modalPool) modalPool.innerText = weeklyState.prizePoolTon;
+
+            if (previousSubtitle) {
+                previousSubtitle.innerText = weeklyState.previousWeekAvailable
+                    ? "Посмотреть итоговый рейтинг"
+                    : "Завершённых недель пока нет";
+            }
+
+            if (adminButton) {
+                adminButton.style.display = userData.is_admin ? "inline-block" : "none";
+            }
+
+            startWeeklyCountdown();
+            return true;
+        }
+
+        async function loadWeeklySummary() {
             try {
                 const response = await fetch(`${API_URL}/api/leaderboard`);
                 const data = await response.json();
 
-                listContainer.innerHTML = "";
-
-                if (!data.success || !Array.isArray(data.leaders)) {
-                    throw new Error("Leaderboard response is invalid");
+                if (!response.ok || !data.success) {
+                    throw new Error(data.detail || "Не удалось загрузить недельный рейтинг.");
                 }
 
-                if (data.leaders.length === 0) {
+                applyWeeklyResponse(data);
+                return data;
+
+            } catch (error) {
+                console.error("Ошибка недельного рейтинга:", error);
+                return null;
+            }
+        }
+
+        function renderCurrentLeaderboard(data) {
+            const listContainer = document.getElementById("leaderboard-list");
+            listContainer.innerHTML = "";
+
+            if (!Array.isArray(data?.leaders) || data.leaders.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "leader-item";
+                empty.textContent = "Пока нет участников с ADP на этой неделе";
+                listContainer.appendChild(empty);
+                return;
+            }
+
+            data.leaders.forEach((leader) => {
+                const row = document.createElement("div");
+                row.className = "leader-row-v10";
+
+                const place = document.createElement("span");
+                place.className = "leader-place-v10";
+                const rank = Number(leader.rank || 0);
+                place.textContent = rank === 1 ? "🥇 1" : rank === 2 ? "🥈 2" : rank === 3 ? "🥉 3" : `#${rank}`;
+
+                const player = document.createElement("span");
+                player.className = "leader-player-v10";
+                player.textContent = displayPlayerName(leader);
+
+                const adp = document.createElement("span");
+                adp.className = "leader-adp-v10";
+                adp.textContent = Number(leader.weekly_score || 0).toLocaleString("ru-RU");
+
+                const share = document.createElement("span");
+                share.className = "leader-share-v10";
+                share.textContent = `${Number(leader.share_percent || 0)}%`;
+
+                row.append(place, player, adp, share);
+                listContainer.appendChild(row);
+            });
+        }
+
+        async function openLeaderboard() {
+            haptic("light");
+            document.getElementById("modal-leaderboard").style.display = "flex";
+
+            const listContainer = document.getElementById("leaderboard-list");
+            listContainer.innerHTML = '<div class="leader-item"><span>Загрузка рейтинга...</span></div>';
+
+            try {
+                const data = await loadWeeklySummary();
+                if (!data) throw new Error("Leaderboard unavailable");
+                renderCurrentLeaderboard(data);
+            } catch (error) {
+                console.error("Ошибка Top-10:", error);
+                listContainer.innerHTML = '<div class="leader-item"><span>Ошибка соединения с сервером</span></div>';
+            }
+        }
+
+        async function openPreviousWeek() {
+            haptic("light");
+            document.getElementById("modal-previous-week").style.display = "flex";
+
+            const list = document.getElementById("previous-week-list");
+            list.innerHTML = '<div class="leader-item"><span>Загрузка...</span></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/leaderboard/previous`);
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.detail || "Не удалось загрузить прошлую неделю.");
+                }
+
+                list.innerHTML = "";
+
+                if (!data.available || !Array.isArray(data.leaders) || data.leaders.length === 0) {
                     const empty = document.createElement("div");
                     empty.className = "leader-item";
-                    empty.textContent = "Пока нет участников";
-                    listContainer.appendChild(empty);
+                    empty.textContent = "Победителей прошлой недели пока нет";
+                    list.appendChild(empty);
                     return;
                 }
 
-                data.leaders.forEach((leader, index) => {
+                data.leaders.forEach((leader) => {
                     const row = document.createElement("div");
-                    row.className = "leader-item";
+                    row.className = "previous-row-v10";
 
-                    const name = document.createElement("span");
-                    name.className = "leader-name";
-                    name.textContent = `#${index + 1} ${leader.first_name || "Пилот"}`;
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    const rank = Number(leader.rank || 0);
+                    place.textContent = rank === 1 ? "🥇 1" : rank === 2 ? "🥈 2" : rank === 3 ? "🥉 3" : `#${rank}`;
 
-                    const score = document.createElement("span");
-                    score.className = "leader-score";
-                    score.textContent = `${Number(leader.weekly_score || 0)} ADP`;
+                    const player = document.createElement("span");
+                    player.className = "leader-player-v10";
+                    player.textContent = displayPlayerName(leader);
 
-                    row.appendChild(name);
-                    row.appendChild(score);
-                    listContainer.appendChild(row);
+                    const adp = document.createElement("span");
+                    adp.className = "leader-adp-v10";
+                    adp.textContent = `${Number(leader.final_adp || 0).toLocaleString("ru-RU")} ADP`;
+
+                    row.append(place, player, adp);
+                    list.appendChild(row);
                 });
-            } catch (error) {
-                console.error("Ошибка Top-30:", error);
-                listContainer.innerHTML = "";
 
-                const fail = document.createElement("div");
-                fail.className = "leader-item";
-                fail.textContent = "Ошибка соединения с сервером";
-                listContainer.appendChild(fail);
+            } catch (error) {
+                console.error("Ошибка прошлой недели:", error);
+                list.innerHTML = '<div class="leader-item"><span>Ошибка соединения с сервером</span></div>';
+            }
+        }
+
+        function openPrizePoolEditor() {
+            haptic("light");
+
+            if (!userData.is_admin) {
+                showAlert("Изменять призовой фонд может только администратор.");
+                return;
+            }
+
+            const input = document.getElementById("prize-pool-input");
+            input.value = weeklyState.prizePoolTon || "0";
+            document.getElementById("modal-prize-pool").style.display = "flex";
+            setTimeout(() => input.focus(), 100);
+        }
+
+        async function savePrizePool() {
+            if (!userData.is_admin) return;
+
+            const input = document.getElementById("prize-pool-input");
+            const value = String(input.value || "").trim();
+
+            if (value === "" || Number(value) < 0) {
+                showAlert("Введите корректный призовой фонд в TON.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/prize-pool`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData,
+                        prize_pool_ton: value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.detail || "Не удалось изменить призовой фонд.");
+                }
+
+                weeklyState.prizePoolTon = String(data.prize_pool_ton ?? value);
+                closeModals();
+                await loadWeeklySummary();
+                haptic("medium");
+                showAlert(`Призовой фонд текущей недели: ${weeklyState.prizePoolTon} TON`);
+
+            } catch (error) {
+                console.error("Ошибка изменения призового фонда:", error);
+                showAlert(error.message || "Не удалось изменить призовой фонд.");
             }
         }
 
@@ -1272,6 +1777,8 @@
 
         function closeModals() {
             document.getElementById("modal-leaderboard").style.display = "none";
+            document.getElementById("modal-previous-week").style.display = "none";
+            document.getElementById("modal-prize-pool").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
         }
@@ -2450,6 +2957,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         // Так автovосстановление кошелька не вызывает повторное сообщение при каждом входе.
         (async function startApp() {
             await syncUser();
+            await loadWeeklySummary();
             initTonConnect();
         })();
     </script>

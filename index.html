@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.0: Premium main-screen visual redesign -->
+    <!-- v11.1: Compact Telegram-style game hub, Russian UI -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -607,6 +607,390 @@
             .live-dot,
             .menu-grid > .action-with-info:first-child .btn-play::before {
                 animation: none !important;
+            }
+        }
+
+
+        /* =========================================================
+           v11.1 — КОМПАКТНЫЙ ГЛАВНЫЙ ЭКРАН
+           Один экран = одно главное действие: начать полёт.
+           ========================================================= */
+
+        #main-menu {
+            gap: 10px;
+        }
+
+        #main-menu .brand-bar {
+            min-height: 42px;
+            padding: 0 2px;
+        }
+
+        #main-menu .brand-lockup {
+            gap: 9px;
+        }
+
+        #main-menu .brand-mark {
+            width: 34px;
+            height: 34px;
+            flex-basis: 34px;
+            border-radius: 12px;
+            font-size: 16px;
+        }
+
+        #main-menu .brand-name {
+            font-size: 12px;
+            letter-spacing: 0.08em;
+        }
+
+        .top-wallet-wrap {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        #main-menu .top-wallet-wrap #btn-wallet {
+            width: auto;
+            max-width: 126px;
+            min-height: 34px;
+            height: 34px;
+            padding: 7px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            box-shadow: none;
+        }
+
+        #main-menu .top-wallet-wrap .context-info-btn {
+            position: static;
+            transform: none;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 28px;
+            border-radius: 50%;
+            font-size: 11px;
+        }
+
+        #main-menu .top-wallet-wrap .context-info-btn:active {
+            transform: scale(0.94);
+        }
+
+        .flight-hub {
+            position: relative;
+            overflow: hidden;
+            border-radius: 22px;
+            padding: 15px;
+            background:
+                radial-gradient(circle at 92% 10%, rgba(56,232,255,0.13), transparent 30%),
+                linear-gradient(145deg, rgba(14, 31, 50, 0.95), rgba(8, 20, 34, 0.94));
+            border: 1px solid rgba(116, 206, 255, 0.14);
+            box-shadow: 0 15px 38px rgba(0,0,0,0.24);
+        }
+
+        .flight-hub::after {
+            content: "✈";
+            position: absolute;
+            right: 18px;
+            top: -30px;
+            font-size: 100px;
+            color: rgba(255,255,255,0.024);
+            transform: rotate(-10deg);
+            pointer-events: none;
+        }
+
+        .flight-user-row {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .flight-user-copy {
+            min-width: 0;
+        }
+
+        .flight-user-label {
+            color: var(--text-muted);
+            font-size: 8.5px;
+            font-weight: 800;
+            margin-bottom: 3px;
+        }
+
+        .flight-user-name {
+            font-size: 18px;
+            line-height: 1.1;
+            font-weight: 900;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .adp-compact {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            padding: 8px 10px;
+            border-radius: 13px;
+            background: rgba(69,245,206,0.07);
+            border: 1px solid rgba(69,245,206,0.16);
+            color: var(--accent-green);
+        }
+
+        .adp-compact-value {
+            font-size: 19px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -0.03em;
+        }
+
+        .adp-compact-unit {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+        }
+
+        #main-menu .flight-primary {
+            position: relative;
+            z-index: 1;
+        }
+
+        #main-menu .flight-primary .btn-play {
+            min-height: 56px;
+            border-radius: 17px;
+            font-size: 15px;
+        }
+
+        #main-menu .flight-primary .context-info-btn {
+            width: 29px;
+            height: 29px;
+            right: 10px;
+            font-size: 11px;
+        }
+
+        #main-menu .attempts-counter {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            margin: 8px 0 0;
+            min-height: 22px;
+            padding: 4px 8px;
+            border: 0;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 9px;
+        }
+
+        .compact-section {
+            border-radius: 19px;
+            padding: 12px;
+            background: rgba(11, 24, 40, 0.68);
+            border: 1px solid rgba(139, 190, 232, 0.075);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.15);
+        }
+
+        .compact-section-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 9px;
+        }
+
+        .compact-section-title {
+            color: #dfeaf6;
+            font-size: 10.5px;
+            font-weight: 900;
+        }
+
+        .compact-section-note {
+            color: var(--text-muted);
+            font-size: 8.5px;
+        }
+
+        .bonus-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 7px;
+        }
+
+        .bonus-item {
+            position: relative;
+            min-width: 0;
+        }
+
+        #main-menu .bonus-item .btn {
+            min-height: 61px;
+            height: 61px;
+            border-radius: 14px;
+            padding: 9px 6px;
+            font-size: 10px;
+            line-height: 1.22;
+            text-align: center;
+            white-space: normal;
+            box-shadow: none;
+        }
+
+        #main-menu .bonus-item .btn-ad {
+            background:
+                linear-gradient(145deg, rgba(41, 101, 220, 0.92), rgba(39, 68, 171, 0.92));
+            border: 1px solid rgba(107,169,255,0.20);
+        }
+
+        #main-menu .bonus-item .btn-secondary {
+            background:
+                linear-gradient(145deg, rgba(19, 38, 59, 0.95), rgba(12, 27, 44, 0.94));
+            border-color: rgba(139,190,232,0.09);
+            color: #d9e6f2;
+        }
+
+        #main-menu .bonus-item .context-info-btn {
+            top: 6px;
+            right: 6px;
+            transform: none;
+            width: 21px;
+            height: 21px;
+            font-size: 9px;
+            background: rgba(4,13,24,0.46);
+        }
+
+        #main-menu .bonus-item .context-info-btn:active {
+            transform: scale(0.94);
+        }
+
+        .league-compact {
+            overflow: hidden;
+            border-radius: 19px;
+            background:
+                radial-gradient(circle at 5% 0%, rgba(255,216,106,0.075), transparent 31%),
+                linear-gradient(145deg, rgba(16, 29, 46, 0.86), rgba(9, 20, 34, 0.86));
+            border: 1px solid rgba(255,216,106,0.12);
+            box-shadow: 0 10px 26px rgba(0,0,0,0.15);
+        }
+
+        .league-compact-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 11px 12px 8px;
+        }
+
+        .league-compact-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #fff0b7;
+            font-size: 11px;
+            font-weight: 900;
+        }
+
+        .league-compact-head .info-btn {
+            width: 27px;
+            height: 27px;
+            flex-basis: 27px;
+            font-size: 10px;
+        }
+
+        .league-stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 7px;
+            padding: 0 12px 9px;
+        }
+
+        .league-stat {
+            min-width: 0;
+            padding: 8px 9px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.045);
+        }
+
+        .league-stat-label {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+            font-size: 7.5px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+        }
+
+        .league-stat-value {
+            display: block;
+            color: var(--text-main);
+            font-size: 11px;
+            line-height: 1.15;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .league-stat-value.fund {
+            color: #ffe18a;
+        }
+
+        #main-menu .admin-fund-btn {
+            margin-left: 3px;
+            padding: 3px 5px;
+            font-size: 6.8px;
+            vertical-align: middle;
+        }
+
+        .league-links {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-top: 1px solid rgba(255,255,255,0.055);
+        }
+
+        .league-link {
+            min-height: 38px;
+            border: 0;
+            background: transparent;
+            color: #cdd9e7;
+            font: inherit;
+            font-size: 9.5px;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .league-link + .league-link {
+            border-left: 1px solid rgba(255,255,255,0.055);
+        }
+
+        .league-link:active {
+            background: rgba(255,255,255,0.035);
+        }
+
+        #previous-week-subtitle {
+            display: none;
+        }
+
+        @media (max-width: 360px) {
+            #main-menu .brand-name {
+                font-size: 11px;
+            }
+
+            #main-menu .top-wallet-wrap #btn-wallet {
+                max-width: 108px;
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            .bonus-grid {
+                gap: 5px;
+            }
+
+            #main-menu .bonus-item .btn {
+                font-size: 9.3px;
             }
         }
 
@@ -1630,81 +2014,35 @@
                 <div class="brand-mark">✈</div>
                 <div class="brand-copy">
                     <div class="brand-name">ADP FLIGHT LEAGUE</div>
-                    <div class="brand-subtitle">Weekly aviation challenge</div>
                 </div>
             </div>
 
-            <div class="live-pill">
-                <span class="live-dot"></span>
-                LIVE WEEK
-            </div>
-        </div>
-
-        <div class="profile-card">
-            <div class="pilot-meta">
-                <div class="pilot-kicker">YOUR PILOT PROFILE</div>
-                <h2 id="user-name">Пилот</h2>
-                <div class="pilot-subline">Недельный результат</div>
-            </div>
-
-            <div class="balance-badge">
-                <div class="balance-label">BALANCE</div>
-                <div class="balance-value-line">
-                    <span id="user-score">0</span>
-                    <span class="balance-unit">ADP</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="league-card">
-            <div class="leaderboard-banner" onclick="openLeaderboard()">
-                <div class="lb-left">
-                    <div class="lb-icon">🏆</div>
-                    <div class="lb-info">
-                        <h3>Недельная лига · Top-10</h3>
-                        <p>Открыть текущий рейтинг пилотов</p>
-                    </div>
-                </div>
-
+            <div class="top-wallet-wrap">
+                <button class="btn btn-secondary" id="btn-wallet" onclick="connectWallet()">
+                    👛 TON
+                </button>
                 <button
-                    class="info-btn"
-                    onclick="event.stopPropagation(); openRules();"
-                    aria-label="Как работает рейтинг"
+                    class="context-info-btn"
+                    onclick="openContextHelp('wallet')"
+                    aria-label="Зачем нужен TON-кошелёк"
                 >!</button>
             </div>
-
-            <div class="weekly-summary">
-                <div class="weekly-summary-row">
-                    <span class="weekly-summary-label">ПРИЗОВОЙ ФОНД</span>
-                    <span class="weekly-summary-value weekly-fund-value">
-                        <span id="weekly-prize-pool">—</span> TON
-                        <button
-                            class="admin-fund-btn"
-                            id="admin-fund-btn"
-                            onclick="openPrizePoolEditor()"
-                        >✏️ Изменить</button>
-                    </span>
-                </div>
-
-                <div class="weekly-summary-row">
-                    <span class="weekly-summary-label">ДО ФИКСАЦИИ</span>
-                    <span class="weekly-summary-value" id="weekly-countdown">—</span>
-                </div>
-            </div>
         </div>
 
-        <div class="previous-week-banner" id="previous-week-banner" onclick="openPreviousWeek()">
-            <div>
-                <div class="previous-week-title">🏅 Победители прошлой недели</div>
-                <div class="previous-week-subtitle" id="previous-week-subtitle">Загрузка...</div>
+        <div class="flight-hub">
+            <div class="flight-user-row">
+                <div class="flight-user-copy">
+                    <div class="flight-user-label">Пилот</div>
+                    <div class="flight-user-name" id="user-name">Пилот</div>
+                </div>
+
+                <div class="adp-compact">
+                    <span class="adp-compact-value" id="user-score">0</span>
+                    <span class="adp-compact-unit">ADP</span>
+                </div>
             </div>
-            <div style="color: var(--text-muted); font-size: 18px;">›</div>
-        </div>
 
-        <div class="section-label">FLIGHT CONTROL</div>
-
-        <div class="menu-grid">
-            <div class="action-with-info">
+            <div class="action-with-info flight-primary">
                 <button class="btn btn-play" onclick="startGame()">
                     ✈️ НАЧАТЬ ПОЛЁТ
                 </button>
@@ -1716,42 +2054,89 @@
             </div>
 
             <div class="attempts-counter" id="attempts-text">
-                Доступно попыток полета: 0
+                Попытки: 0
+            </div>
+        </div>
+
+        <div class="compact-section">
+            <div class="compact-section-head">
+                <div class="compact-section-title">Получить ADP</div>
+                <div class="compact-section-note">Дополнительные способы</div>
             </div>
 
-            <div class="action-with-info">
-                <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
-                    📺 Смотреть рекламу (+50 ADP)
-                </button>
-                <button
-                    class="context-info-btn"
-                    onclick="openContextHelp('ad')"
-                    aria-label="Как работают реклама и попытки"
-                >!</button>
-            </div>
-
-            <div class="section-label">PILOT SERVICES</div>
-
-            <div class="row-group">
-                <button class="btn btn-secondary" onclick="openReferral()">
-                    👥 Рефералы (+10)
-                </button>
-
-                <div class="action-with-info">
-                    <button class="btn btn-secondary" id="btn-wallet" onclick="connectWallet()">
-                        👛 Подключить TON
+            <div class="bonus-grid">
+                <div class="bonus-item">
+                    <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
+                        📺 Реклама +50 ADP
                     </button>
                     <button
                         class="context-info-btn"
-                        onclick="openContextHelp('wallet')"
-                        aria-label="Зачем нужен TON-кошелёк"
+                        onclick="openContextHelp('ad')"
+                        aria-label="Как работают реклама и попытки"
                     >!</button>
+                </div>
+
+                <div class="bonus-item">
+                    <button class="btn btn-secondary" onclick="openReferral()">
+                        👥 Рефералы +10
+                    </button>
+                </div>
+
+                <div class="bonus-item">
+                    <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
+                        💬 Чат +10
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="league-compact">
+            <div class="league-compact-head">
+                <div class="league-compact-title">
+                    <span>🏆</span>
+                    <span>Недельная лига · Top-10</span>
+                </div>
+
+                <button
+                    class="info-btn"
+                    onclick="openRules()"
+                    aria-label="Как работает рейтинг"
+                >!</button>
+            </div>
+
+            <div class="league-stats-row">
+                <div class="league-stat">
+                    <span class="league-stat-label">ПРИЗОВОЙ ФОНД</span>
+                    <span class="league-stat-value fund">
+                        <span id="weekly-prize-pool">—</span> TON
+                        <button
+                            class="admin-fund-btn"
+                            id="admin-fund-btn"
+                            onclick="openPrizePoolEditor()"
+                        >✏️</button>
+                    </span>
+                </div>
+
+                <div class="league-stat">
+                    <span class="league-stat-label">ДО ОКОНЧАНИЯ НЕДЕЛИ</span>
+                    <span class="league-stat-value" id="weekly-countdown">—</span>
                 </div>
             </div>
 
-            <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
-                💬 Присоединиться в Community (+10 ADP)
-            </button>
+            <div class="league-links">
+                <button class="league-link" onclick="openLeaderboard()">
+                    🏆 Текущий рейтинг
+                </button>
+
+                <button
+                    class="league-link"
+                    id="previous-week-banner"
+                    onclick="openPreviousWeek()"
+                >
+                    🏅 Прошлая неделя
+                    <span id="previous-week-subtitle">Загрузка...</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -2027,7 +2412,7 @@
     <div class="modal" id="modal-community">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>💬 ADP Flight League Community</h3>
+                <h3>💬 Чат ADP Flight League</h3>
                 <button class="close-modal" onclick="closeModals()">✕</button>
             </div>
 
@@ -2370,9 +2755,9 @@
             const attemptsText = document.getElementById("attempts-text");
 
             if (userData.is_admin) {
-                attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} · 🧪 Тестовый режим ∞`;
+                attemptsText.innerText = `Попытки: ${userData.game_attempts} · 🧪 тестовый режим ∞`;
             } else {
-                attemptsText.innerText = `Доступно попыток полета: ${userData.game_attempts} (Реклама: ${userData.daily_ads_count}/${DAILY_AD_LIMIT})`;
+                attemptsText.innerText = `Попытки: ${userData.game_attempts} · реклама ${userData.daily_ads_count}/${DAILY_AD_LIMIT}`;
             }
 
             updateWalletButton();
@@ -2384,8 +2769,8 @@
             if (!button) return;
 
             button.innerHTML = userData.community?.claimed
-                ? "✅ Чат: +10 ADP получено"
-                : "💬 Присоединиться в чат (+10 ADP)";
+                ? "✅ Чат: бонус получен"
+                : "💬 Чат +10 ADP";
         }
 
         function renderCommunityModal() {
@@ -2415,7 +2800,7 @@
             status.classList.toggle("success", claimed);
 
             status.textContent = claimed
-                ? "✅ Вступление подтверждено. Community-бонус уже был начислен этому Telegram-аккаунту."
+                ? "✅ Вступление подтверждено. Бонус за вступление в чат уже был начислен этому Telegram-аккаунту."
                 : "Сначала вступите в официальный чат, затем вернитесь сюда и нажмите «Проверить вступление».";
 
             updateCommunityButton();
@@ -2592,7 +2977,7 @@
                 if (!data.success) {
                     throw new Error(
                         data.reason ||
-                        "Не удалось начислить Community-бонус."
+                        "Не удалось начислить Бонус за вступление в чат."
                     );
                 }
 
@@ -2631,13 +3016,13 @@
 
                 showAlert(
                     data.already_claimed
-                        ? "✅ Community-бонус уже был получен ранее."
+                        ? "✅ Бонус за вступление в чат уже был получен ранее."
                         : `🎉 Вступление подтверждено! +${Number(data.reward || 10)} ADP начислено.`
                 );
 
             } catch (error) {
                 console.error(
-                    "Ошибка Community Bonus:",
+                    "Ошибка Бонус за вступление в чат:",
                     error
                 );
 
@@ -2680,7 +3065,7 @@
                 return;
             }
 
-            btn.innerHTML = "👛 Подключить TON";
+            btn.innerHTML = "👛 TON";
         }
 
 
@@ -2741,13 +3126,13 @@
 
             if (userData.is_admin) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Тестовая AdsGram (+50 ADP)";
+                btnAd.innerHTML = "📺 Тестовая реклама +50";
                 return false;
             }
 
             if (userData.daily_ads_count >= DAILY_AD_LIMIT) {
                 btnAd.disabled = true;
-                btnAd.innerHTML = "✅ Лимит рекламы на сегодня: 5/5";
+                btnAd.innerHTML = "✅ Реклама 5/5";
                 return false;
             }
 
@@ -2757,7 +3142,7 @@
 
             if (userData.last_ad_time === 0 || remaining <= 0) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Смотреть рекламу (+50 ADP)";
+                btnAd.innerHTML = "📺 Реклама +50 ADP";
                 return false;
             }
 
@@ -2766,7 +3151,7 @@
             const formattedTime = `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
 
             btnAd.disabled = true;
-            btnAd.innerHTML = `⏳ Следующая реклама через ${formattedTime}`;
+            btnAd.innerHTML = `⏳ Реклама ${formattedTime}`;
             return true;
         }
 

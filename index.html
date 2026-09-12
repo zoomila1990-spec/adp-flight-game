@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.4: weekly league + safe close preview + virtual Top-10 test -->
+    <!-- v10.5: weekly league + 100% prize pool distribution -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1067,7 +1067,7 @@
                 <div class="preview-total-card" id="weekly-preview-totals">
                     <span class="label">Призовой фонд</span><span class="value">—</span>
                     <span class="label">Будет распределено</span><span class="value">—</span>
-                    <span class="label">Останется в резерве</span><span class="value">—</span>
+                    <span class="label">Останется нераспределено</span><span class="value">—</span>
                     <span class="label">Проверка сброса ADP</span><span class="value">—</span>
                 </div>
 
@@ -1980,9 +1980,9 @@
                     <span class="value">${data.prize_pool_ton} TON</span>
                     <span class="label">Будет распределено</span>
                     <span class="value">${data.distributed_ton} TON (${data.distributed_percent}%)</span>
-                    <span class="label">Останется в резерве</span>
-                    <span class="value">${data.reserve_ton} TON (${data.reserve_percent}%)</span>
-                    <span class="label">Формула 73% / 27%</span>
+                    <span class="label">Останется нераспределено</span>
+                    <span class="value">${data.undistributed_ton} TON</span>
+                    <span class="label">Формула 100% фонда</span>
                     <span class="value">${data.formula_ok ? "✅ OK" : "⚠️ Ошибка"}</span>
                     <span class="label">Реальные данные изменены?</span>
                     <span class="value">${data.changes_persisted ? "⚠️ Да" : "✅ Нет"}</span>
@@ -2084,8 +2084,8 @@
                     <span class="value">${data.prize_pool_ton} TON</span>
                     <span class="label">Будет распределено</span>
                     <span class="value">${data.distributed_ton} TON</span>
-                    <span class="label">Останется в резерве</span>
-                    <span class="value">${data.reserve_ton} TON</span>
+                    <span class="label">Останется нераспределено</span>
+                    <span class="value">${data.undistributed_ton} TON</span>
                     <span class="label">Проверка сброса ADP</span>
                     <span class="value">${data.simulated_reset_ok ? "✅ OK" : "⚠️ Ошибка"}</span>
                     <span class="label">Изменения сохранены?</span>

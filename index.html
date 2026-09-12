@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10: weekly league + prize pool + previous-week winners -->
+    <!-- v10.2: weekly league + safe admin close preview -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -477,6 +477,73 @@
             line-height: 1.4;
         }
 
+
+        .preview-safe-note {
+            border: 1px solid rgba(0, 255, 204, 0.22);
+            background: rgba(0, 255, 204, 0.07);
+            border-radius: 13px;
+            padding: 11px 12px;
+            color: #b9fff1;
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .preview-total-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 7px 12px;
+            padding: 12px;
+            border: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.035);
+            border-radius: 14px;
+            font-size: 12px;
+        }
+
+        .preview-total-card .label {
+            color: var(--text-muted);
+        }
+
+        .preview-total-card .value {
+            color: #ffffff;
+            font-weight: 800;
+            text-align: right;
+        }
+
+        .preview-row {
+            display: grid;
+            grid-template-columns: 43px minmax(0, 1fr) 65px 56px 64px;
+            gap: 6px;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 11px;
+            padding: 9px 8px;
+            font-size: 10px;
+        }
+
+        .preview-row .player {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #ffffff;
+        }
+
+        .preview-row .number {
+            text-align: right;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        .preview-head {
+            display: grid;
+            grid-template-columns: 43px minmax(0, 1fr) 65px 56px 64px;
+            gap: 6px;
+            padding: 0 8px 4px;
+            color: var(--text-muted);
+            font-size: 9px;
+            text-transform: uppercase;
+        }
+
         /* ---------------------------------------------------------
            ИГРОВОЙ ЭКРАН
            --------------------------------------------------------- */
@@ -930,6 +997,52 @@
                         При создании следующей недели текущее значение переносится как стартовое и его можно снова изменить.
                     </div>
                     <button class="btn btn-play" onclick="savePrizePool()">💾 Сохранить фонд</button>
+                    <button class="btn btn-secondary" onclick="runWeeklyClosePreview()">
+                        🧪 Проверить закрытие недели
+                    </button>
+                    <div class="fund-edit-help">
+                        Тест использует настоящий алгоритм закрытия, но затем полностью
+                        откатывает транзакцию. ADP, фонд и текущая неделя не изменятся.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: SAFE PREVIEW ЗАКРЫТИЯ НЕДЕЛИ (ADMIN)
+         ========================================================= -->
+    <div class="modal" id="modal-weekly-close-preview">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧪 Тест закрытия недели</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="preview-safe-note">
+                    ✅ Это безопасный dry-run. Сервер выполняет настоящий алгоритм
+                    закрытия внутри SQLite-транзакции и затем делает полный ROLLBACK.
+                    Никакие ADP и результаты не сохраняются.
+                </div>
+
+                <div class="preview-total-card" id="weekly-preview-totals">
+                    <span class="label">Призовой фонд</span><span class="value">—</span>
+                    <span class="label">Будет распределено</span><span class="value">—</span>
+                    <span class="label">Останется в резерве</span><span class="value">—</span>
+                    <span class="label">Проверка сброса ADP</span><span class="value">—</span>
+                </div>
+
+                <div class="preview-head">
+                    <span>Место</span>
+                    <span>Игрок</span>
+                    <span style="text-align:right;">ADP</span>
+                    <span style="text-align:right;">Доля</span>
+                    <span style="text-align:right;">TON</span>
+                </div>
+
+                <div id="weekly-preview-list">
+                    <div class="leader-item"><span>Запустите проверку...</span></div>
                 </div>
             </div>
         </div>
@@ -1783,6 +1896,113 @@
             }
         }
 
+        async function runWeeklyClosePreview() {
+            if (!userData.is_admin) {
+                showAlert("Тест закрытия доступен только администратору.");
+                return;
+            }
+
+            haptic("light");
+            closeModals();
+
+            const modal = document.getElementById("modal-weekly-close-preview");
+            const totals = document.getElementById("weekly-preview-totals");
+            const list = document.getElementById("weekly-preview-list");
+
+            modal.style.display = "flex";
+            totals.innerHTML = `
+                <span class="label">Статус</span>
+                <span class="value">⏳ Проверяем...</span>
+            `;
+            list.innerHTML = '<div class="leader-item"><span>Выполняется безопасный dry-run...</span></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/weekly-close-preview`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...NGROK_SKIP_HEADERS
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.detail || "Не удалось выполнить тест закрытия.");
+                }
+
+                totals.innerHTML = `
+                    <span class="label">Призовой фонд</span>
+                    <span class="value">${data.prize_pool_ton} TON</span>
+                    <span class="label">Будет распределено</span>
+                    <span class="value">${data.distributed_ton} TON</span>
+                    <span class="label">Останется в резерве</span>
+                    <span class="value">${data.reserve_ton} TON</span>
+                    <span class="label">Проверка сброса ADP</span>
+                    <span class="value">${data.simulated_reset_ok ? "✅ OK" : "⚠️ Ошибка"}</span>
+                    <span class="label">Изменения сохранены?</span>
+                    <span class="value">${data.changes_persisted ? "⚠️ Да" : "✅ Нет"}</span>
+                `;
+
+                list.innerHTML = "";
+
+                if (!Array.isArray(data.leaders) || data.leaders.length === 0) {
+                    list.innerHTML = '<div class="leader-item"><span>В рейтинге пока нет участников с ADP.</span></div>';
+                    return;
+                }
+
+                data.leaders.forEach((leader) => {
+                    const row = document.createElement("div");
+                    row.className = "preview-row";
+
+                    const rank = Number(leader.rank || 0);
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    place.textContent =
+                        rank === 1 ? "🥇 1" :
+                        rank === 2 ? "🥈 2" :
+                        rank === 3 ? "🥉 3" :
+                        `#${rank}`;
+
+                    const player = document.createElement("span");
+                    player.className = "player";
+                    player.textContent = displayPlayerName(leader);
+
+                    const adp = document.createElement("span");
+                    adp.className = "number";
+                    adp.style.color = "var(--accent-green)";
+                    adp.textContent = Number(leader.final_adp || 0).toLocaleString("ru-RU");
+
+                    const share = document.createElement("span");
+                    share.className = "number";
+                    share.style.color = "#93c5fd";
+                    share.textContent = `${Number(leader.share_percent || 0)}%`;
+
+                    const ton = document.createElement("span");
+                    ton.className = "number";
+                    ton.style.color = "var(--accent-yellow)";
+                    ton.textContent = String(leader.prize_ton || "0");
+
+                    row.append(place, player, adp, share, ton);
+                    list.appendChild(row);
+                });
+
+                haptic("medium");
+
+            } catch (error) {
+                console.error("Ошибка dry-run закрытия недели:", error);
+                totals.innerHTML = `
+                    <span class="label">Статус</span>
+                    <span class="value">❌ Ошибка</span>
+                `;
+                list.innerHTML = `<div class="leader-item"><span>${error.message || "Ошибка соединения с сервером"}</span></div>`;
+            }
+        }
+
+
         function openRules() {
             haptic("light");
             document.getElementById("modal-rules").style.display = "flex";
@@ -1792,6 +2012,7 @@
             document.getElementById("modal-leaderboard").style.display = "none";
             document.getElementById("modal-previous-week").style.display = "none";
             document.getElementById("modal-prize-pool").style.display = "none";
+            document.getElementById("modal-weekly-close-preview").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
         }

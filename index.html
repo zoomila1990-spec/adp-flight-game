@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.1: Compact Telegram-style game hub, Russian UI -->
+    <!-- v11.2.1: Premium in-flight visual redesign + CSS fix -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1836,96 +1836,232 @@
             width: 100vw;
             height: 100vh;
             height: 100dvh;
-            background: linear-gradient(180deg, #0a1628 0%, #0f172a 100%);
             z-index: 100;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 10px 12px 14px;
+            padding: 8px 10px 10px;
             overflow: hidden;
+            background:
+                radial-gradient(circle at 50% -10%, rgba(54, 224, 255, 0.14), transparent 40%),
+                linear-gradient(180deg, #06111e 0%, #081523 55%, #050b13 100%);
         }
 
         .game-shell {
-            width: min(100%, 420px);
+            width: min(100%, 430px);
             height: 100%;
+            min-height: 0;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .game-flight-bar {
+            min-height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 3px;
+        }
+
+        .game-flight-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: #eefcff;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .game-flight-title-mark {
+            width: 25px;
+            height: 25px;
+            display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 9px;
+            color: #03131a;
+            background: linear-gradient(145deg, #eaffff, #61f1d7 55%, #5ed4ff);
+            box-shadow: 0 5px 18px rgba(76, 232, 255, 0.20);
+        }
+
+        .game-flight-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #8ea7bd;
+            font-size: 8.5px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+        }
+
+        .game-flight-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #45f5ce;
+            box-shadow: 0 0 10px rgba(69, 245, 206, 0.75);
         }
 
         .game-hud {
             width: 100%;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 7px;
         }
 
         .hud-card {
-            background: rgba(15, 23, 42, 0.88);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            padding: 9px 12px;
-            text-align: center;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+            position: relative;
+            overflow: hidden;
+            min-height: 51px;
+            background:
+                linear-gradient(145deg, rgba(15, 31, 49, 0.90), rgba(8, 20, 34, 0.90));
+            border: 1px solid rgba(125, 197, 241, 0.10);
+            border-radius: 15px;
+            padding: 8px 11px;
+            text-align: left;
+            box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+        }
+
+        .hud-card::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 42%;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(76,232,255,0.85), transparent);
         }
 
         .hud-label {
             display: block;
-            font-size: 10px;
+            color: #7890a6;
+            font-size: 8px;
+            font-weight: 850;
+            letter-spacing: 0.09em;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: #94a3b8;
-            margin-bottom: 2px;
+            margin-bottom: 3px;
         }
 
         .hud-value {
-            font-size: 17px;
-            font-weight: 800;
-            color: #ffffff;
+            display: flex;
+            align-items: baseline;
+            gap: 4px;
+            color: #f5fbff;
+            font-size: 19px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -0.025em;
+        }
+
+        .hud-score-card .hud-value {
+            color: #56f4d5;
+        }
+
+        .hud-unit {
+            color: #79a2b9;
+            font-size: 8px;
+            font-weight: 850;
+            letter-spacing: 0.08em;
         }
 
         .canvas-wrap {
             position: relative;
             width: 100%;
-            flex: 1;
-            min-height: 320px;
-            max-height: 560px;
-            border-radius: 20px;
+            flex: 1 1 auto;
+            min-height: 290px;
+            border-radius: 22px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42);
-            background: #0284c7;
+            border: 1px solid rgba(104, 207, 255, 0.17);
+            background: #0b5279;
+            box-shadow:
+                0 18px 42px rgba(0, 0, 0, 0.34),
+                0 0 34px rgba(49, 196, 255, 0.07);
+        }
+
+        .canvas-wrap::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 2;
+            border-radius: inherit;
+            box-shadow:
+                inset 0 18px 35px rgba(4, 12, 22, 0.18),
+                inset 0 -26px 45px rgba(4, 12, 22, 0.24),
+                inset 20px 0 38px rgba(4, 12, 22, 0.09),
+                inset -20px 0 38px rgba(4, 12, 22, 0.09);
+        }
+
+        .canvas-wrap::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.035), transparent 16%, transparent 84%, rgba(1,9,17,0.14));
+            border-radius: inherit;
         }
 
         #gameCanvas {
             display: block;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, #38bdf8 0%, #0284c7 55%, #0369a1 100%);
+            background: #0b6f9c;
             touch-action: none;
         }
 
         .control-panel {
             width: 100%;
-            background: rgba(15, 23, 42, 0.9);
-            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 18px;
-            padding: 10px 14px 12px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+            padding: 9px 12px 10px;
+            background:
+                linear-gradient(145deg, rgba(14, 29, 47, 0.94), rgba(8, 19, 32, 0.94));
+            border: 1px solid rgba(125, 197, 241, 0.09);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.20);
+        }
+
+        .control-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 4px;
         }
 
         .control-label {
-            color: #cbd5e1;
+            color: #d7e5f1;
+            font-size: 10px;
+            font-weight: 850;
+        }
+
+        .control-hint {
+            color: #71889e;
+            font-size: 8.5px;
+            font-weight: 700;
+        }
+
+        .flight-control-row {
+            display: grid;
+            grid-template-columns: 22px minmax(0, 1fr) 22px;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-arrow {
+            color: #6c8ca5;
+            font-size: 16px;
+            font-weight: 900;
             text-align: center;
-            font-size: 11px;
-            margin-bottom: 8px;
+            user-select: none;
         }
 
         .flight-slider {
             width: 100%;
-            height: 30px;
+            height: 34px;
             appearance: none;
             -webkit-appearance: none;
             background: transparent;
@@ -1934,10 +2070,17 @@
         }
 
         .flight-slider::-webkit-slider-runnable-track {
-            height: 8px;
+            height: 7px;
             border-radius: 999px;
-            background: linear-gradient(90deg, #1d4ed8, #38bdf8, #1d4ed8);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(64, 112, 165, 0.82),
+                    rgba(72, 231, 255, 0.88) 50%,
+                    rgba(64, 112, 165, 0.82)
+                );
+            border: 1px solid rgba(160, 224, 255, 0.13);
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.22);
         }
 
         .flight-slider::-webkit-slider-thumb {
@@ -1947,60 +2090,83 @@
             height: 30px;
             margin-top: -12px;
             border-radius: 50%;
-            background: #ff9800;
-            border: 3px solid #ffffff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            background:
+                radial-gradient(circle at 38% 32%, #ffffff 0 13%, transparent 14%),
+                linear-gradient(145deg, #f9ffff, #55ecd5 48%, #55cfff);
+            border: 3px solid rgba(255,255,255,0.96);
+            box-shadow:
+                0 5px 14px rgba(0, 0, 0, 0.36),
+                0 0 18px rgba(69, 245, 206, 0.34);
             cursor: pointer;
         }
 
         .flight-slider::-moz-range-track {
-            height: 8px;
+            height: 7px;
             border-radius: 999px;
-            background: linear-gradient(90deg, #1d4ed8, #38bdf8, #1d4ed8);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(64, 112, 165, 0.82),
+                    rgba(72, 231, 255, 0.88) 50%,
+                    rgba(64, 112, 165, 0.82)
+                );
+            border: 1px solid rgba(160, 224, 255, 0.13);
         }
 
         .flight-slider::-moz-range-thumb {
             width: 26px;
             height: 26px;
             border-radius: 50%;
-            background: #ff9800;
+            background: linear-gradient(145deg, #f9ffff, #55ecd5 48%, #55cfff);
             border: 3px solid #ffffff;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            box-shadow:
+                0 5px 14px rgba(0, 0, 0, 0.36),
+                0 0 18px rgba(69, 245, 206, 0.34);
             cursor: pointer;
         }
 
         .game-tip {
-            margin-top: 4px;
+            margin-top: 2px;
             text-align: center;
-            color: #94a3b8;
-            font-size: 11px;
-            line-height: 1.35;
+            color: #6f879c;
+            font-size: 8.5px;
+            line-height: 1.3;
         }
 
-        @media (max-height: 650px) {
+        @media (max-height: 700px) {
             #game-screen {
-                padding-top: 6px;
-                padding-bottom: 8px;
+                padding-top: 5px;
+                padding-bottom: 6px;
             }
 
             .game-shell {
-                gap: 7px;
+                gap: 6px;
+            }
+
+            .game-flight-bar {
+                min-height: 27px;
             }
 
             .hud-card {
-                padding: 6px 10px;
+                min-height: 44px;
+                padding-top: 6px;
+                padding-bottom: 6px;
+            }
+
+            .hud-value {
+                font-size: 17px;
             }
 
             .control-panel {
-                padding: 7px 12px 8px;
+                padding-top: 7px;
+                padding-bottom: 7px;
             }
 
-            .control-label,
             .game-tip {
-                font-size: 10px;
+                display: none;
             }
         }
+
     </style>
 </head>
 
@@ -2510,10 +2676,25 @@
          ========================================================= -->
     <div id="game-screen">
         <div class="game-shell">
+            <div class="game-flight-bar">
+                <div class="game-flight-title">
+                    <span class="game-flight-title-mark">✈</span>
+                    <span>Полёт</span>
+                </div>
+
+                <div class="game-flight-status">
+                    <span class="game-flight-status-dot"></span>
+                    <span>СЕССИЯ АКТИВНА</span>
+                </div>
+            </div>
+
             <div class="game-hud">
-                <div class="hud-card">
-                    <span class="hud-label">Счёт</span>
-                    <span class="hud-value" id="current-game-score">0</span>
+                <div class="hud-card hud-score-card">
+                    <span class="hud-label">Заработано</span>
+                    <span class="hud-value">
+                        <span id="current-game-score">0</span>
+                        <span class="hud-unit">ADP</span>
+                    </span>
                 </div>
 
                 <div class="hud-card">
@@ -2527,18 +2708,27 @@
             </div>
 
             <div class="control-panel">
-                <div class="control-label">✈️ Штурвал — двигайте ползунок влево и вправо</div>
-                <input
-                    id="flightSlider"
-                    class="flight-slider"
-                    type="range"
-                    min="0"
-                    max="380"
-                    value="190"
-                    aria-label="Управление самолетом"
-                >
+                <div class="control-title-row">
+                    <div class="control-label">Штурвал</div>
+                    <div class="control-hint">Ведите пальцем плавно</div>
+                </div>
+
+                <div class="flight-control-row">
+                    <div class="control-arrow">‹</div>
+                    <input
+                        id="flightSlider"
+                        class="flight-slider"
+                        type="range"
+                        min="0"
+                        max="380"
+                        value="190"
+                        aria-label="Управление самолетом"
+                    >
+                    <div class="control-arrow">›</div>
+                </div>
+
                 <div class="game-tip">
-                    Уклоняйтесь от препятствий. Каждый успешно пройденный объект = 1 ADP.
+                    Каждое пройденное препятствие приносит +1 ADP.
                 </div>
             </div>
         </div>
@@ -4869,28 +5059,43 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 116">
                 <defs>
-                    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#ffffff"/>
-                        <stop offset="100%" stop-color="#dbe7f5"/>
+                        <stop offset="45%" stop-color="#e9fbff"/>
+                        <stop offset="100%" stop-color="#9dd9e9"/>
                     </linearGradient>
-                    <linearGradient id="wingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stop-color="#ffb020"/>
-                        <stop offset="100%" stop-color="#f97316"/>
+                    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#72ffe2"/>
+                        <stop offset="55%" stop-color="#31d7dc"/>
+                        <stop offset="100%" stop-color="#188ec8"/>
+                    </linearGradient>
+                    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#fff0aa"/>
+                        <stop offset="100%" stop-color="#f2b847"/>
                     </linearGradient>
                 </defs>
 
-                <ellipse cx="50" cy="62" rx="15" ry="38" fill="rgba(0,0,0,0.18)"/>
+                <ellipse cx="50" cy="67" rx="19" ry="39" fill="rgba(0,24,42,0.24)"/>
 
-                <path d="M50 43 L8 63 L15 75 L50 57 Z" fill="url(#wingGrad)"/>
-                <path d="M50 43 L92 63 L85 75 L50 57 Z" fill="url(#wingGrad)"/>
+                <path d="M50 43 L6 62 L14 74 L50 58 Z" fill="url(#wing)"/>
+                <path d="M50 43 L94 62 L86 74 L50 58 Z" fill="url(#wing)"/>
 
-                <rect x="39" y="12" width="22" height="82" rx="11" fill="url(#bodyGrad)"/>
-                <path d="M39 20 Q50 2 61 20 Z" fill="#f8fafc"/>
-                <rect x="44" y="24" width="12" height="18" rx="6" fill="#0ea5e9"/>
+                <path d="M40 20 Q50 4 60 20 L62 88 Q59 102 50 112 Q41 102 38 88 Z"
+                      fill="url(#body)"/>
 
-                <path d="M42 85 L25 103 L34 108 L50 94 Z" fill="url(#wingGrad)"/>
-                <path d="M58 85 L75 103 L66 108 L50 94 Z" fill="url(#wingGrad)"/>
-                <path d="M47 82 L50 69 L53 82 L53 101 L47 101 Z" fill="#f8fafc"/>
+                <path d="M42 23 Q50 13 58 23 L56 41 Q50 36 44 41 Z"
+                      fill="#0a5d86"/>
+                <path d="M44 27 Q50 21 56 27 L55 35 Q50 31 45 35 Z"
+                      fill="#65dbff"/>
+
+                <path d="M43 83 L23 101 L33 108 L50 94 Z" fill="url(#wing)"/>
+                <path d="M57 83 L77 101 L67 108 L50 94 Z" fill="url(#wing)"/>
+
+                <path d="M48 69 L50 57 L52 69 L52 102 L48 102 Z"
+                      fill="#dff7fb"/>
+
+                <path d="M46 78 L54 78 L53 83 L47 83 Z" fill="url(#gold)"/>
+                <circle cx="50" cy="57" r="2.5" fill="#ffd86a"/>
             </svg>
         `);
 
@@ -5244,35 +5449,154 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
         function drawGame() {
             ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-            drawSkyDetails();
+
+            drawFlightBackground();
+            drawAtmosphereDetails();
+            drawPlaneTrail();
 
             for (const obstacle of obstacles) {
                 drawObstacle(obstacle);
             }
 
             drawPlane();
+            drawFlightVignette();
         }
 
-        function drawSkyDetails() {
+        function drawFlightBackground() {
+            const sky = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+            sky.addColorStop(0, "#0b4269");
+            sky.addColorStop(0.42, "#087ba6");
+            sky.addColorStop(0.72, "#16a2c2");
+            sky.addColorStop(1, "#69ced9");
+
+            ctx.fillStyle = sky;
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            const glow = ctx.createRadialGradient(
+                GAME_WIDTH * 0.52,
+                GAME_HEIGHT * 0.18,
+                10,
+                GAME_WIDTH * 0.52,
+                GAME_HEIGHT * 0.18,
+                GAME_WIDTH * 0.78
+            );
+            glow.addColorStop(0, "rgba(198,247,255,0.20)");
+            glow.addColorStop(1, "rgba(198,247,255,0)");
+
+            ctx.fillStyle = glow;
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+        }
+
+        function drawAtmosphereDetails() {
             ctx.save();
 
-            ctx.globalAlpha = 0.16;
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 1;
+            const now = performance.now() / 1000;
+            const travel = now * (34 + gameSpeedMultiplier * 16);
 
-            const offset = (performance.now() * 0.03 * gameSpeedMultiplier) % 70;
+            // Мягкие дальние облака: декоративные, полупрозрачные,
+            // поэтому их легко отличить от настоящих препятствий.
+            const hazeClouds = [
+                { x: 45, y: 40, s: 0.85, a: 0.08 },
+                { x: 315, y: 145, s: 1.10, a: 0.065 },
+                { x: 80, y: 290, s: 1.25, a: 0.055 },
+                { x: 320, y: 405, s: 0.90, a: 0.07 }
+            ];
 
-            for (let y = -70 + offset; y < GAME_HEIGHT; y += 70) {
+            for (const cloud of hazeClouds) {
+                const y = ((cloud.y + travel) % (GAME_HEIGHT + 130)) - 65;
+
+                ctx.globalAlpha = cloud.a;
+                ctx.fillStyle = "#e9fbff";
+
+                const w = 76 * cloud.s;
+                const h = 30 * cloud.s;
+
                 ctx.beginPath();
-                ctx.moveTo(18, y);
-                ctx.lineTo(48, y + 18);
+                ctx.ellipse(cloud.x - w * 0.2, y, w * 0.32, h * 0.48, 0, 0, Math.PI * 2);
+                ctx.ellipse(cloud.x + w * 0.06, y - h * 0.18, w * 0.35, h * 0.60, 0, 0, Math.PI * 2);
+                ctx.ellipse(cloud.x + w * 0.34, y, w * 0.28, h * 0.45, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Скоростные линии по краям создают ощущение полёта,
+            // не вмешиваясь в реальную механику.
+            const lineOffset = (travel * 1.6) % 72;
+
+            ctx.globalAlpha = 0.20;
+            ctx.strokeStyle = "#d6fbff";
+            ctx.lineWidth = 1.3;
+            ctx.lineCap = "round";
+
+            for (let y = -80 + lineOffset; y < GAME_HEIGHT + 60; y += 72) {
+                const length = 17 + gameSpeedMultiplier * 2.2;
+
+                ctx.beginPath();
+                ctx.moveTo(17, y);
+                ctx.lineTo(17, y + length);
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.moveTo(GAME_WIDTH - 18, y + 18);
-                ctx.lineTo(GAME_WIDTH - 48, y + 36);
+                ctx.moveTo(GAME_WIDTH - 17, y + 24);
+                ctx.lineTo(GAME_WIDTH - 17, y + 24 + length);
                 ctx.stroke();
             }
+
+            ctx.restore();
+        }
+
+        function drawPlaneTrail() {
+            const centerX = plane.x + plane.width / 2;
+            const baseY = plane.y + plane.height * 0.84;
+            const trailStrength = Math.min(
+                1,
+                0.35 + Math.abs(plane.vx) / plane.maxHorizontalSpeed * 0.35
+            );
+
+            ctx.save();
+
+            const trail = ctx.createLinearGradient(
+                centerX,
+                baseY,
+                centerX,
+                baseY + 54
+            );
+            trail.addColorStop(0, `rgba(116,255,230,${0.28 * trailStrength})`);
+            trail.addColorStop(1, "rgba(116,255,230,0)");
+
+            ctx.strokeStyle = trail;
+            ctx.lineWidth = 2;
+            ctx.lineCap = "round";
+
+            ctx.beginPath();
+            ctx.moveTo(centerX - 6, baseY);
+            ctx.lineTo(centerX - 4 - plane.vx * 0.018, baseY + 46);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX + 6, baseY);
+            ctx.lineTo(centerX + 4 - plane.vx * 0.018, baseY + 46);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawFlightVignette() {
+            ctx.save();
+
+            const vignette = ctx.createRadialGradient(
+                GAME_WIDTH / 2,
+                GAME_HEIGHT / 2,
+                GAME_WIDTH * 0.28,
+                GAME_WIDTH / 2,
+                GAME_HEIGHT / 2,
+                GAME_WIDTH * 0.82
+            );
+
+            vignette.addColorStop(0, "rgba(0,0,0,0)");
+            vignette.addColorStop(1, "rgba(1,15,28,0.20)");
+
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
             ctx.restore();
         }
@@ -5284,6 +5608,10 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             ctx.save();
             ctx.translate(centerX, centerY);
             ctx.rotate(plane.tilt);
+
+            ctx.shadowColor = "rgba(30, 238, 225, 0.38)";
+            ctx.shadowBlur = 16;
+            ctx.shadowOffsetY = 5;
 
             if (planeImage.complete && planeImage.naturalWidth > 0) {
                 ctx.drawImage(
@@ -5297,22 +5625,45 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 drawPlaneFallback();
             }
 
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
             ctx.restore();
         }
 
         function drawPlaneFallback() {
-            ctx.fillStyle = "#f8fafc";
-            ctx.fillRect(-6, -28, 12, 50);
+            const body = ctx.createLinearGradient(0, -30, 0, 30);
+            body.addColorStop(0, "#ffffff");
+            body.addColorStop(1, "#a6dce8");
 
-            ctx.fillStyle = "#ff9800";
+            const wing = ctx.createLinearGradient(-30, 0, 30, 0);
+            wing.addColorStop(0, "#55f1da");
+            wing.addColorStop(1, "#209bd1");
+
+            ctx.fillStyle = wing;
             ctx.beginPath();
-            ctx.moveTo(0, -10);
-            ctx.lineTo(-25, 8);
-            ctx.lineTo(-18, 14);
-            ctx.lineTo(0, 3);
-            ctx.lineTo(18, 14);
-            ctx.lineTo(25, 8);
+            ctx.moveTo(0, -7);
+            ctx.lineTo(-28, 9);
+            ctx.lineTo(-20, 16);
+            ctx.lineTo(0, 5);
+            ctx.lineTo(20, 16);
+            ctx.lineTo(28, 9);
             ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = body;
+            ctx.beginPath();
+            ctx.roundRect(-7, -31, 14, 58, 7);
+            ctx.fill();
+
+            ctx.fillStyle = "#0b6d91";
+            ctx.beginPath();
+            ctx.ellipse(0, -17, 4, 8, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = "#ffd86a";
+            ctx.beginPath();
+            ctx.arc(0, 4, 2.3, 0, Math.PI * 2);
             ctx.fill();
         }
 
@@ -5333,15 +5684,73 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             ctx.save();
 
-            ctx.fillStyle = "#475569";
+            // Огненный след — чисто визуальный, hitbox не меняется.
+            const tail = ctx.createLinearGradient(
+                cx,
+                cy - radius * 1.7,
+                cx,
+                cy
+            );
+            tail.addColorStop(0, "rgba(255, 173, 54, 0)");
+            tail.addColorStop(0.55, "rgba(255, 151, 42, 0.36)");
+            tail.addColorStop(1, "rgba(255, 220, 116, 0.52)");
+
+            ctx.fillStyle = tail;
+            ctx.beginPath();
+            ctx.moveTo(cx - radius * 0.42, cy - radius * 0.28);
+            ctx.quadraticCurveTo(
+                cx - radius * 0.20,
+                cy - radius * 1.55,
+                cx,
+                cy - radius * 1.90
+            );
+            ctx.quadraticCurveTo(
+                cx + radius * 0.20,
+                cy - radius * 1.55,
+                cx + radius * 0.42,
+                cy - radius * 0.28
+            );
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.shadowColor = "rgba(255, 172, 58, 0.42)";
+            ctx.shadowBlur = 12;
+
+            const rock = ctx.createRadialGradient(
+                cx - radius * 0.28,
+                cy - radius * 0.35,
+                radius * 0.12,
+                cx,
+                cy,
+                radius
+            );
+            rock.addColorStop(0, "#8b99aa");
+            rock.addColorStop(0.46, "#536273");
+            rock.addColorStop(1, "#293746");
+
+            ctx.fillStyle = rock;
             ctx.beginPath();
             ctx.arc(cx, cy, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            ctx.fillStyle = "#334155";
+            ctx.shadowBlur = 0;
+
+            ctx.fillStyle = "rgba(21, 31, 42, 0.50)";
             ctx.beginPath();
-            ctx.arc(cx - radius * 0.28, cy - radius * 0.12, radius * 0.22, 0, Math.PI * 2);
-            ctx.arc(cx + radius * 0.24, cy + radius * 0.20, radius * 0.16, 0, Math.PI * 2);
+            ctx.arc(
+                cx - radius * 0.28,
+                cy - radius * 0.14,
+                radius * 0.21,
+                0,
+                Math.PI * 2
+            );
+            ctx.arc(
+                cx + radius * 0.25,
+                cy + radius * 0.20,
+                radius * 0.15,
+                0,
+                Math.PI * 2
+            );
             ctx.fill();
 
             ctx.restore();
@@ -5350,17 +5759,51 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         function drawBird(obstacle) {
             const cx = obstacle.x + obstacle.width / 2;
             const cy = obstacle.y + obstacle.height / 2;
+            const wingLift = Math.sin(performance.now() * 0.014 + obstacle.x) * 2.2;
 
             ctx.save();
-            ctx.strokeStyle = "#7c2d12";
-            ctx.lineWidth = 4;
+
+            ctx.shadowColor = "rgba(0, 18, 32, 0.34)";
+            ctx.shadowBlur = 7;
+            ctx.strokeStyle = "#17344a";
+            ctx.lineWidth = 5;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
 
             ctx.beginPath();
-            ctx.moveTo(cx - obstacle.width * 0.42, cy - 2);
-            ctx.quadraticCurveTo(cx - obstacle.width * 0.22, cy + obstacle.height * 0.44, cx, cy);
-            ctx.quadraticCurveTo(cx + obstacle.width * 0.22, cy + obstacle.height * 0.44, cx + obstacle.width * 0.42, cy - 2);
+            ctx.moveTo(cx - obstacle.width * 0.43, cy + wingLift);
+            ctx.quadraticCurveTo(
+                cx - obstacle.width * 0.24,
+                cy + obstacle.height * 0.44 - wingLift,
+                cx,
+                cy
+            );
+            ctx.quadraticCurveTo(
+                cx + obstacle.width * 0.24,
+                cy + obstacle.height * 0.44 - wingLift,
+                cx + obstacle.width * 0.43,
+                cy + wingLift
+            );
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = "rgba(111, 222, 239, 0.45)";
+            ctx.lineWidth = 1.2;
+
+            ctx.beginPath();
+            ctx.moveTo(cx - obstacle.width * 0.39, cy + wingLift - 1);
+            ctx.quadraticCurveTo(
+                cx - obstacle.width * 0.22,
+                cy + obstacle.height * 0.36 - wingLift,
+                cx,
+                cy - 1
+            );
+            ctx.quadraticCurveTo(
+                cx + obstacle.width * 0.22,
+                cy + obstacle.height * 0.36 - wingLift,
+                cx + obstacle.width * 0.39,
+                cy + wingLift - 1
+            );
             ctx.stroke();
 
             ctx.restore();
@@ -5373,15 +5816,69 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             const h = obstacle.height;
 
             ctx.save();
-            ctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+
+            ctx.shadowColor = "rgba(8, 51, 76, 0.24)";
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetY = 7;
+
+            const cloudGradient = ctx.createLinearGradient(
+                x,
+                y,
+                x,
+                y + h
+            );
+            cloudGradient.addColorStop(0, "rgba(255,255,255,0.98)");
+            cloudGradient.addColorStop(0.56, "rgba(231,249,255,0.96)");
+            cloudGradient.addColorStop(1, "rgba(188,226,238,0.94)");
+
+            ctx.fillStyle = cloudGradient;
 
             ctx.beginPath();
-            ctx.arc(x + w * 0.28, y + h * 0.60, h * 0.30, 0, Math.PI * 2);
-            ctx.arc(x + w * 0.50, y + h * 0.43, h * 0.39, 0, Math.PI * 2);
-            ctx.arc(x + w * 0.72, y + h * 0.60, h * 0.31, 0, Math.PI * 2);
+            ctx.arc(
+                x + w * 0.28,
+                y + h * 0.60,
+                h * 0.30,
+                0,
+                Math.PI * 2
+            );
+            ctx.arc(
+                x + w * 0.50,
+                y + h * 0.43,
+                h * 0.39,
+                0,
+                Math.PI * 2
+            );
+            ctx.arc(
+                x + w * 0.72,
+                y + h * 0.60,
+                h * 0.31,
+                0,
+                Math.PI * 2
+            );
             ctx.fill();
 
-            ctx.fillRect(x + w * 0.24, y + h * 0.52, w * 0.52, h * 0.34);
+            ctx.fillRect(
+                x + w * 0.24,
+                y + h * 0.52,
+                w * 0.52,
+                h * 0.34
+            );
+
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+
+            ctx.strokeStyle = "rgba(255,255,255,0.48)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(
+                x + w * 0.50,
+                y + h * 0.43,
+                h * 0.34,
+                Math.PI * 1.08,
+                Math.PI * 1.78
+            );
+            ctx.stroke();
+
             ctx.restore();
         }
 

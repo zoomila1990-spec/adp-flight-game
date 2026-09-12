@@ -1065,6 +1065,13 @@
            ========================================================= */
 
         const API_URL = "https://stash-skilled-stucco.ngrok-free.dev";
+
+        // Free ngrok can return its browser-warning HTML instead of API JSON
+        // for direct GET requests. This header tells ngrok to pass the request
+        // straight through to FastAPI.
+        const NGROK_SKIP_HEADERS = {
+            "ngrok-skip-browser-warning": "true"
+        };
         const BOT_USERNAME = "adp_flight_test_bot";
         const AD_COOLDOWN_SECONDS = 30 * 60;
         const DAILY_AD_LIMIT = 5;
@@ -1592,7 +1599,10 @@
 
         async function loadWeeklySummary() {
             try {
-                const response = await fetch(`${API_URL}/api/leaderboard`);
+                const response = await fetch(
+                    `${API_URL}/api/leaderboard`,
+                    { headers: NGROK_SKIP_HEADERS }
+                );
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {
@@ -1671,7 +1681,10 @@
             list.innerHTML = '<div class="leader-item"><span>Загрузка...</span></div>';
 
             try {
-                const response = await fetch(`${API_URL}/api/leaderboard/previous`);
+                const response = await fetch(
+                    `${API_URL}/api/leaderboard/previous`,
+                    { headers: NGROK_SKIP_HEADERS }
+                );
                 const data = await response.json();
 
                 if (!response.ok || !data.success) {

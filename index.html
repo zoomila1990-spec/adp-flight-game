@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.2: weekly league + safe admin close preview -->
+    <!-- v10.4: weekly league + safe close preview + virtual Top-10 test -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1000,10 +1000,48 @@
                     <button class="btn btn-secondary" onclick="runWeeklyClosePreview()">
                         🧪 Проверить закрытие недели
                     </button>
+                    <button class="btn btn-secondary" onclick="runVirtualTop10Test()">
+                        🧮 Проверить полный Top-10
+                    </button>
                     <div class="fund-edit-help">
                         Тест использует настоящий алгоритм закрытия, но затем полностью
                         откатывает транзакцию. ADP, фонд и текущая неделя не изменятся.
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: ВИРТУАЛЬНЫЙ TOP-10 TEST (ADMIN)
+         ========================================================= -->
+    <div class="modal" id="modal-virtual-top10">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🧮 Полный Top-10 — тест</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="preview-safe-note">
+                    ✅ Это полностью виртуальный тест. Реальные игроки, ADP,
+                    текущая неделя и база результатов не изменяются.
+                </div>
+
+                <div class="preview-total-card" id="virtual-top10-totals">
+                    <span class="label">Статус</span><span class="value">—</span>
+                </div>
+
+                <div class="preview-head">
+                    <span>Место</span>
+                    <span>Игрок</span>
+                    <span style="text-align:right;">ADP</span>
+                    <span style="text-align:right;">Доля</span>
+                    <span style="text-align:right;">TON</span>
+                </div>
+
+                <div id="virtual-top10-list">
+                    <div class="leader-item"><span>Запустите проверку...</span></div>
                 </div>
             </div>
         </div>
@@ -1896,6 +1934,113 @@
             }
         }
 
+        async function runVirtualTop10Test() {
+            if (!userData.is_admin) {
+                showAlert("Тест Top-10 доступен только администратору.");
+                return;
+            }
+
+            haptic("light");
+            closeModals();
+
+            const modal = document.getElementById("modal-virtual-top10");
+            const totals = document.getElementById("virtual-top10-totals");
+            const list = document.getElementById("virtual-top10-list");
+
+            modal.style.display = "flex";
+            totals.innerHTML = `
+                <span class="label">Статус</span>
+                <span class="value">⏳ Проверяем...</span>
+            `;
+            list.innerHTML =
+                '<div class="leader-item"><span>Считаем виртуальный Top-10...</span></div>';
+
+            try {
+                const response = await fetch(`${API_URL}/api/admin/weekly-top10-simulation`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...NGROK_SKIP_HEADERS
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.detail || "Не удалось выполнить виртуальный тест Top-10."
+                    );
+                }
+
+                totals.innerHTML = `
+                    <span class="label">Призовой фонд</span>
+                    <span class="value">${data.prize_pool_ton} TON</span>
+                    <span class="label">Будет распределено</span>
+                    <span class="value">${data.distributed_ton} TON (${data.distributed_percent}%)</span>
+                    <span class="label">Останется в резерве</span>
+                    <span class="value">${data.reserve_ton} TON (${data.reserve_percent}%)</span>
+                    <span class="label">Формула 73% / 27%</span>
+                    <span class="value">${data.formula_ok ? "✅ OK" : "⚠️ Ошибка"}</span>
+                    <span class="label">Реальные данные изменены?</span>
+                    <span class="value">${data.changes_persisted ? "⚠️ Да" : "✅ Нет"}</span>
+                `;
+
+                list.innerHTML = "";
+
+                data.leaders.forEach((leader) => {
+                    const row = document.createElement("div");
+                    row.className = "preview-row";
+
+                    const rank = Number(leader.rank || 0);
+
+                    const place = document.createElement("span");
+                    place.className = "leader-place-v10";
+                    place.textContent =
+                        rank === 1 ? "🥇 1" :
+                        rank === 2 ? "🥈 2" :
+                        rank === 3 ? "🥉 3" :
+                        `#${rank}`;
+
+                    const player = document.createElement("span");
+                    player.className = "player";
+                    player.textContent = leader.first_name || `Тест-пилот ${rank}`;
+
+                    const adp = document.createElement("span");
+                    adp.className = "number";
+                    adp.style.color = "var(--accent-green)";
+                    adp.textContent = Number(leader.final_adp || 0).toLocaleString("ru-RU");
+
+                    const share = document.createElement("span");
+                    share.className = "number";
+                    share.style.color = "#93c5fd";
+                    share.textContent = `${Number(leader.share_percent || 0)}%`;
+
+                    const ton = document.createElement("span");
+                    ton.className = "number";
+                    ton.style.color = "var(--accent-yellow)";
+                    ton.textContent = String(leader.prize_ton || "0");
+
+                    row.append(place, player, adp, share, ton);
+                    list.appendChild(row);
+                });
+
+                haptic("medium");
+
+            } catch (error) {
+                console.error("Ошибка виртуального Top-10 теста:", error);
+                totals.innerHTML = `
+                    <span class="label">Статус</span>
+                    <span class="value">❌ Ошибка</span>
+                `;
+                list.innerHTML =
+                    `<div class="leader-item"><span>${error.message || "Ошибка соединения с сервером"}</span></div>`;
+            }
+        }
+
+
         async function runWeeklyClosePreview() {
             if (!userData.is_admin) {
                 showAlert("Тест закрытия доступен только администратору.");
@@ -2013,6 +2158,7 @@
             document.getElementById("modal-previous-week").style.display = "none";
             document.getElementById("modal-prize-pool").style.display = "none";
             document.getElementById("modal-weekly-close-preview").style.display = "none";
+            document.getElementById("modal-virtual-top10").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
         }

@@ -1,10 +1,80 @@
+Редактировать
+Редактировать
+Продолжаем с инструкцией.
+
+Готово. Я сделал v10.10 — полноценную встроенную инструкцию.
+
+Скачать index.html v10.10
+
+Что уже внутри инструкции:
+
+как управлять самолётом и как начисляется ADP за препятствия;
+как работают попытки;
+rewarded-реклама: +50 ADP и +1 попытка;
+рефералы: +10 ADP обоим после первой успешной рекламы приглашённого;
+Community: +10 ADP один раз после серверной проверки вступления;
+недельный рейтинг;
+завершение недели каждый понедельник в 00:00 UTC;
+правило при одинаковом ADP;
+распределение Top-10: 30 / 20 / 10 / 8 / 7 / 6 / 6 / 5 / 4 / 4;
+что весь фонд распределяется полностью;
+победители прошлой недели;
+TON Connect и TON Proof;
+выплаты и история tx;
+автоматический перенос фонда на следующую неделю.
+
+Сейчас меняем только index.html. database.py, api.py, main.py и ngrok не трогаем.
+
+Сделай так:
+
+Скачай файл выше.
+Открой → Ctrl+A → Ctrl+C.
+В VS Code открой web → index.html.
+Ctrl+A → Ctrl+V → Ctrl+S.
+На GitHub открой index.html → карандаш → Ctrl+A → Ctrl+V → Commit changes.
+Подожди около минуты.
+Полностью перезапусти Mini App.
+
+На главном экране появится новая кнопка:
+
+📖 Инструкция / Как играть
+
+Открой её и пришли скриншот верхней части инструкции. Посмотрим, удобно ли она читается на телефоне и нужно ли что-то сократить, переставить или сделать более понятным до финального дизайна. 
+
+index_ADP_game_v10_10_instruction.html
+HTML
+Я знаешь бы что хотел? Чтобы инструкция не в одном месте всё было. А над каждой там или возле каждой плашки соответствующего назначения был там восклицательный значок. И при нажатии на него уже было объяснение. Допустим, где летай, зарабатывай ADP, поднимайся в рейтинге. Пускай этот восклицательный значок будет или рядом, или там на кнопочке где-то сбоку. В полёт. Полёт — то же самое, тоже всё можно в одну поместить. Реклама и попытки. Это можно возле кнопки рекламы запустить или на кнопке рекламы также восклицательный знак где-нибудь сбоку с правой стороны, кругленький такой. Там рефералы в рефералах, комьюнити в комьюнити. Ну вот имей в виду, чтобы не всё в одной куче было. Вот. И можно вот эту плашку вообще удалить, что призовой фонд автоматически переносится на следующую неделю, пока администратор не изменит его размер. Она не должна быть.
+
+Да, понял тебя. Так действительно будет намного удобнее: не одна длинная инструкция, а короткие подсказки прямо возле нужной функции.
+
+Я уже переделал интерфейс под этот принцип.
+
+Скачать index.html v10.11
+
+Что изменилось:
+
+общую кнопку «📖 Инструкция / Как играть» полностью убрал;
+возле Top-10 теперь ! — там объясняется, что такое ADP, недельный рейтинг, понедельник 00:00 UTC, тай-брейк и распределение фонда;
+возле рекламы появился круглый ! — там объяснение +50 ADP, +1 попытка и что награда только за успешный rewarded-просмотр;
+возле «Начать полёт» появился ! — управление, инерция, препятствия, +1 ADP и списание попытки;
+возле TON-кошелька появился ! — TON Connect, TON Proof и зачем нужен подтверждённый адрес;
+реферальные правила остаются непосредственно внутри окна «Рефералы»;
+правила Community остаются непосредственно внутри окна Community;
+плашку про то, что фонд автоматически переносится на следующую неделю, удалил полностью, как ты и попросил.
+
+Сейчас меняем только index.html. api.py, database.py, main.py и ngrok не трогаем.
+
+Сделай как обычно: скачай файл → Ctrl+A → Ctrl+C → в VS Code web/index.html → Ctrl+A → Ctrl+V → Ctrl+S → обнови index.html на GitHub → Commit changes → перезапусти Mini App.
+
+После этого пришли скриншот главного экрана. Хочу проверить, чтобы круглые ! не мешали кнопкам и выглядели аккуратно. 
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.9: Community chat + one-time 10 ADP reward -->
+    <!-- v10.11: Contextual help icons instead of one long instruction -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -728,6 +798,221 @@
             background: rgba(0,255,204,0.06);
         }
 
+
+        .guide-hero {
+            border: 1px solid rgba(56, 189, 248, 0.22);
+            background: linear-gradient(
+                135deg,
+                rgba(56, 189, 248, 0.10),
+                rgba(0, 255, 204, 0.055)
+            );
+            border-radius: 16px;
+            padding: 15px;
+        }
+
+        .guide-hero-title {
+            font-size: 16px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 6px;
+        }
+
+        .guide-hero-text {
+            font-size: 11px;
+            line-height: 1.55;
+            color: #cbd5e1;
+        }
+
+        .guide-section {
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            background: rgba(255, 255, 255, 0.035);
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+        .guide-section-title {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            font-weight: 900;
+            color: #ffffff;
+            margin-bottom: 8px;
+        }
+
+        .guide-section p {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 10.5px;
+            line-height: 1.55;
+        }
+
+        .guide-section p + p {
+            margin-top: 7px;
+        }
+
+        .guide-rule {
+            display: grid;
+            grid-template-columns: 26px minmax(0, 1fr);
+            gap: 8px;
+            align-items: start;
+            margin-top: 8px;
+        }
+
+        .guide-rule:first-of-type {
+            margin-top: 0;
+        }
+
+        .guide-rule-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(56, 189, 248, 0.10);
+            border: 1px solid rgba(56, 189, 248, 0.12);
+            font-size: 13px;
+        }
+
+        .guide-rule-text {
+            color: #cbd5e1;
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+
+        .guide-rule-text strong {
+            color: #ffffff;
+        }
+
+        .guide-prize-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .guide-prize-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            border-radius: 9px;
+            padding: 7px 9px;
+            background: rgba(255, 255, 255, 0.035);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            color: #cbd5e1;
+            font-size: 10px;
+        }
+
+        .guide-prize-item strong {
+            color: var(--accent-yellow);
+        }
+
+        .guide-note {
+            border-radius: 12px;
+            padding: 10px 11px;
+            color: #b9fff1;
+            background: rgba(0, 255, 204, 0.055);
+            border: 1px solid rgba(0, 255, 204, 0.16);
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+
+
+        .action-with-info {
+            position: relative;
+            width: 100%;
+        }
+
+        .action-with-info > .btn {
+            padding-right: 54px;
+        }
+
+        .context-info-btn {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(8, 15, 28, 0.72);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 900;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 3;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+        }
+
+        .context-info-btn:active {
+            transform: translateY(-50%) scale(0.94);
+        }
+
+        .context-help-card {
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            background: linear-gradient(
+                135deg,
+                rgba(56, 189, 248, 0.08),
+                rgba(0, 255, 204, 0.04)
+            );
+            border-radius: 16px;
+            padding: 14px;
+            color: #cbd5e1;
+            font-size: 11px;
+            line-height: 1.55;
+        }
+
+        .context-help-card p {
+            margin: 0;
+        }
+
+        .context-help-card p + p {
+            margin-top: 8px;
+        }
+
+        .context-help-card strong {
+            color: #ffffff;
+        }
+
+        .context-help-accent {
+            margin-top: 10px;
+            border-radius: 12px;
+            padding: 10px 11px;
+            background: rgba(0, 255, 204, 0.055);
+            border: 1px solid rgba(0, 255, 204, 0.16);
+            color: #b9fff1;
+            font-size: 10.5px;
+            line-height: 1.5;
+        }
+
+        .context-prize-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .context-prize-item {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 7px 9px;
+            border-radius: 9px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 10px;
+            color: #cbd5e1;
+        }
+
+        .context-prize-item strong {
+            color: var(--accent-yellow);
+        }
+
         /* ---------------------------------------------------------
            ИГРОВОЙ ЭКРАН
            --------------------------------------------------------- */
@@ -1040,8 +1325,8 @@
             <button
                 class="info-btn"
                 onclick="event.stopPropagation(); openRules();"
-                aria-label="Правила и награды"
-            >?</button>
+                aria-label="Как работает рейтинг"
+            >!</button>
         </div>
 
         <div class="weekly-summary">
@@ -1071,31 +1356,53 @@
         </div>
 
         <div class="menu-grid">
-            <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
-                📺 Смотреть рекламу (+50 ADP)
-            </button>
+            <div class="action-with-info">
+                <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
+                    📺 Смотреть рекламу (+50 ADP)
+                </button>
+                <button
+                    class="context-info-btn"
+                    onclick="openContextHelp('ad')"
+                    aria-label="Как работают реклама и попытки"
+                >!</button>
+            </div>
 
             <div class="attempts-counter" id="attempts-text">
                 Доступно попыток полета: 0
             </div>
 
-            <button class="btn btn-play" onclick="startGame()">
-                🚀 НАЧАТЬ ПОЛЕТ
-            </button>
+            <div class="action-with-info">
+                <button class="btn btn-play" onclick="startGame()">
+                    🚀 НАЧАТЬ ПОЛЕТ
+                </button>
+                <button
+                    class="context-info-btn"
+                    onclick="openContextHelp('flight')"
+                    aria-label="Как проходит полёт"
+                >!</button>
+            </div>
 
             <div class="row-group">
                 <button class="btn btn-secondary" onclick="openReferral()">
                     👥 Рефералы (+10 ADP)
                 </button>
 
-                <button class="btn btn-secondary" id="btn-wallet" onclick="connectWallet()">
-                    👛 Подключить TON
-                </button>
+                <div class="action-with-info">
+                    <button class="btn btn-secondary" id="btn-wallet" onclick="connectWallet()">
+                        👛 Подключить TON
+                    </button>
+                    <button
+                        class="context-info-btn"
+                        onclick="openContextHelp('wallet')"
+                        aria-label="Зачем нужен TON-кошелёк"
+                    >!</button>
+                </div>
             </div>
 
             <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
                 💬 Присоединиться в чат (+10 ADP)
             </button>
+
         </div>
     </div>
 
@@ -1314,30 +1621,73 @@
     </div>
 
     <!-- =========================================================
-         МОДАЛЬНОЕ ОКНО: ПРАВИЛА
+         МОДАЛЬНОЕ ОКНО: КАК РАБОТАЕТ РЕЙТИНГ
          ========================================================= -->
     <div class="modal" id="modal-rules">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>ℹ️ Правила и Награды</h3>
+                <h3>🏆 Как работает недельный рейтинг</h3>
                 <button class="close-modal" onclick="closeModals()">✕</button>
             </div>
 
             <div class="modal-body">
-                <p style="color: var(--text-muted); font-size: 14px; line-height: 1.5;">
-                    Участвуйте в еженедельной гонке ADP Flight League.
-                    Зарабатывайте ADP в полетах, за просмотр рекламы и рефералов. ADP одновременно является вашим недельным балансом и местом в рейтинге.
-                </p>
-
-                <div style="background: rgba(250, 204, 21, 0.1); border: 1px solid rgba(250, 204, 21, 0.2); padding: 12px; border-radius: 12px; margin-top: 8px;">
-                    <p style="color: var(--accent-yellow); font-size: 14px; font-weight: bold;">
-                        Каждую неделю рейтинг фиксируется в понедельник в 00:00 UTC. После фиксации ADP всех игроков обнуляется. Доли Top-10: 30% / 20% / 10% / 5% / 3% / далее по 1%.
+                <div class="context-help-card">
+                    <p>
+                        <strong>ADP — это одновременно недельный баланс и очки рейтинга.</strong>
+                        ADP, заработанные в полётах, за рекламу, рефералов и Community,
+                        складываются в один результат.
                     </p>
+
+                    <p>
+                        Неделя заканчивается <strong>каждый понедельник в 00:00 UTC</strong>.
+                        После фиксации мест ADP всех игроков обнуляется до 0,
+                        и новая неделя начинается на равных условиях.
+                    </p>
+
+                    <p>
+                        Если у двух игроков одинаковый ADP, выше находится тот,
+                        кто <strong>раньше достиг текущего значения ADP</strong>.
+                    </p>
+
+                    <div class="context-prize-grid">
+                        <div class="context-prize-item"><span>🥇 1 место</span><strong>30%</strong></div>
+                        <div class="context-prize-item"><span>🥈 2 место</span><strong>20%</strong></div>
+                        <div class="context-prize-item"><span>🥉 3 место</span><strong>10%</strong></div>
+                        <div class="context-prize-item"><span>4 место</span><strong>8%</strong></div>
+                        <div class="context-prize-item"><span>5 место</span><strong>7%</strong></div>
+                        <div class="context-prize-item"><span>6 место</span><strong>6%</strong></div>
+                        <div class="context-prize-item"><span>7 место</span><strong>6%</strong></div>
+                        <div class="context-prize-item"><span>8 место</span><strong>5%</strong></div>
+                        <div class="context-prize-item"><span>9 место</span><strong>4%</strong></div>
+                        <div class="context-prize-item"><span>10 место</span><strong>4%</strong></div>
+                    </div>
+
+                    <div class="context-help-accent">
+                        💰 Весь заявленный призовой фонд распределяется между фактическими
+                        победителями. Если призовых игроков меньше десяти, фонд распределяется
+                        между занятыми местами пропорционально их базовым долям.
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: КОНТЕКСТНАЯ ПОДСКАЗКА
+         ========================================================= -->
+    <div class="modal" id="modal-context-help">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="context-help-title">ℹ️ Подсказка</h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="context-help-card" id="context-help-body"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- =========================================================
          МОДАЛЬНОЕ ОКНО: COMMUNITY +10 ADP
@@ -1390,8 +1740,11 @@
                 <div class="referral-hero">
                     <div class="referral-hero-title">+10 ADP каждому</div>
                     <div class="referral-hero-text">
-                        Отправьте свою ссылку другу. После его первой успешно подтверждённой рекламы
-                        вы получите +10 ADP, и ваш друг тоже получит +10 ADP.
+                        Отправьте персональную ссылку новому игроку.
+                        После его первой успешно подтверждённой рекламы
+                        вы получите +10 ADP, и приглашённый игрок тоже получит +10 ADP.
+                        Один пользователь может быть закреплён только за одним пригласившим,
+                        а бонус с него начисляется один раз.
                     </div>
                 </div>
 
@@ -1735,6 +2088,83 @@
 
             updateCommunityButton();
         }
+
+        function openContextHelp(type) {
+            haptic("light");
+            closeModals();
+
+            const title = document.getElementById("context-help-title");
+            const body = document.getElementById("context-help-body");
+
+            const help = {
+                flight: {
+                    title: "✈️ Как проходит полёт",
+                    body: `
+                        <p>
+                            Управляйте самолётом горизонтальным контроллером и уклоняйтесь
+                            от препятствий. Самолёт имеет инерцию, поэтому направление меняется
+                            плавно, а не мгновенно.
+                        </p>
+                        <p>
+                            <strong>Каждое успешно пройденное препятствие = +1 ADP.</strong>
+                            После столкновения полёт завершается, а заработанные ADP
+                            добавляются к недельному результату.
+                        </p>
+                        <div class="context-help-accent">
+                            🎟️ Одна попытка списывается сервером в момент начала полёта.
+                        </div>
+                    `
+                },
+
+                ad: {
+                    title: "📺 Реклама и попытки",
+                    body: `
+                        <p>
+                            За успешно завершённый rewarded-просмотр рекламы вы получаете
+                            <strong>+50 ADP и +1 попытку полёта</strong>.
+                        </p>
+                        <p>
+                            Награда начисляется только после успешного завершения рекламы.
+                            Если показ закрыт или не подтверждён рекламной системой,
+                            ADP и попытка не начисляются.
+                        </p>
+                        <div class="context-help-accent">
+                            ⏳ Для обычных игроков действуют серверные лимиты и интервал
+                            между rewarded-просмотрами.
+                        </div>
+                    `
+                },
+
+                wallet: {
+                    title: "💎 TON-кошелёк и TON Proof",
+                    body: `
+                        <p>
+                            TON Connect подключает ваш TON-кошелёк к ADP Flight League.
+                            TON Proof затем криптографически подтверждает, что именно вы
+                            владеете подключённым адресом.
+                        </p>
+                        <p>
+                            Подтверждённый адрес нужен для получения призов, если вы
+                            занимаете призовое место в недельном рейтинге.
+                        </p>
+                        <div class="context-help-accent">
+                            🔐 В выплатах используется сохранённый подтверждённый TON-адрес.
+                        </div>
+                    `
+                }
+            };
+
+            const selected = help[type];
+
+            if (!selected) {
+                return;
+            }
+
+            title.textContent = selected.title;
+            body.innerHTML = selected.body;
+            document.getElementById("modal-context-help").style.display = "flex";
+        }
+
 
         function openCommunity() {
             haptic("light");
@@ -3156,6 +3586,7 @@
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
             document.getElementById("modal-community").style.display = "none";
+            document.getElementById("modal-context-help").style.display = "none";
         }
 
         /* =========================================================
@@ -4338,3 +4769,5 @@ ${shortenTonAddress(userData.ton_wallet_address)}
     </script>
 </body>
 </html>
+index_ADP_game_v10_11_context_help.html
+HTML

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v8.1: TON Connect restore without repeated startup popup -->
+    <!-- v9: TON Proof ownership verification -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -846,6 +846,9 @@
             ton_wallet_chain: "",
             ton_wallet_app: "",
             ton_wallet_updated_at: 0,
+            ton_wallet_raw_address: "",
+            ton_wallet_verified: false,
+            ton_wallet_verified_at: 0,
             referral: {
                 code: "",
                 link: "",
@@ -865,6 +868,8 @@
         let tonConnectionRestored = false;
         let tonWalletSyncInProgress = false;
         let tonConnectInitiatedByUser = false;
+        let tonProofVerificationInProgress = false;
+        let tonProofReconnectRequested = false;
 
         function getAdsgramController() {
             if (adsgramController) {
@@ -933,6 +938,9 @@
                     userData.ton_wallet_chain = data.user.ton_wallet_chain || "";
                     userData.ton_wallet_app = data.user.ton_wallet_app || "";
                     userData.ton_wallet_updated_at = Number(data.user.ton_wallet_updated_at || 0);
+                    userData.ton_wallet_raw_address = data.user.ton_wallet_raw_address || "";
+                    userData.ton_wallet_verified = Boolean(data.user.ton_wallet_verified);
+                    userData.ton_wallet_verified_at = Number(data.user.ton_wallet_verified_at || 0);
                     applyReferralData(data.referral);
 
                     updateUI();
@@ -972,22 +980,21 @@
             const btn = document.getElementById("btn-wallet");
             if (!btn) return;
 
+            let address = userData.ton_wallet_address || "";
+
             if (tonConnectUI?.connected && tonConnectUI?.account?.address) {
-                let address = userData.ton_wallet_address || "";
                 try {
                     address = window.TON_CONNECT_UI.toUserFriendlyAddress(
                         tonConnectUI.account.address
                     );
                 } catch (error) {
-                    // Если форматирование не удалось, используем сохранённый адрес.
+                    // Используем адрес с сервера.
                 }
-
-                btn.innerHTML = `👛 ${shortenTonAddress(address || "TON подключен")}`;
-                return;
             }
 
-            if (userData.ton_wallet_address) {
-                btn.innerHTML = `👛 ${shortenTonAddress(userData.ton_wallet_address)}`;
+            if (address) {
+                const icon = userData.ton_wallet_verified ? "✅" : "🔐";
+                btn.innerHTML = `${icon} ${shortenTonAddress(address)}`;
                 return;
             }
 
@@ -1336,6 +1343,7 @@
             }
 
             const chain = String(wallet.account.chain || "");
+            const rawAddress = String(wallet.account.address || "");
 
             if (chain !== "-239") {
                 showAlert("Для будущих выплат ADP Flight League нужен TON Mainnet кошелёк.");
@@ -1346,7 +1354,7 @@
 
             try {
                 friendlyAddress = window.TON_CONNECT_UI.toUserFriendlyAddress(
-                    wallet.account.address
+                    rawAddress
                 );
             } catch (error) {
                 console.error("Не удалось преобразовать TON адрес:", error);
@@ -1358,7 +1366,8 @@
                 tonWalletSyncInProgress ||
                 (
                     userData.ton_wallet_address === friendlyAddress &&
-                    userData.ton_wallet_chain === chain
+                    userData.ton_wallet_chain === chain &&
+                    userData.ton_wallet_raw_address === rawAddress
                 )
             ) {
                 updateWalletButton();
@@ -1382,7 +1391,8 @@
                         init_data: telegramInitData,
                         wallet_address: friendlyAddress,
                         wallet_chain: chain,
-                        wallet_app: walletApp
+                        wallet_app: walletApp,
+                        wallet_raw_address: rawAddress
                     })
                 });
 
@@ -1399,16 +1409,20 @@
                 userData.ton_wallet_address = data.wallet_address || friendlyAddress;
                 userData.ton_wallet_chain = data.wallet_chain || chain;
                 userData.ton_wallet_app = data.wallet_app || walletApp;
+                userData.ton_wallet_raw_address = data.wallet_raw_address || rawAddress;
                 userData.ton_wallet_updated_at = Number(data.wallet_updated_at || 0);
+                userData.ton_wallet_verified = Boolean(data.wallet_verified);
+                userData.ton_wallet_verified_at = Number(data.wallet_verified_at || 0);
 
                 updateWalletButton();
 
-                // Сообщение показываем только после ручного подключения пользователя.
-                // При автоматическом восстановлении TON Connect на старте — молча.
-                if (showSuccessMessage) {
+                if (showSuccessMessage && !userData.ton_wallet_verified) {
                     haptic("medium");
                     showAlert(
-                        `TON-кошелёк подключён и сохранён:\n${shortenTonAddress(userData.ton_wallet_address)}`
+                        `TON-кошелёк подключён:
+${shortenTonAddress(userData.ton_wallet_address)}
+
+Теперь подтвердим владение через TON Proof.`
                     );
                 }
 
@@ -1450,10 +1464,162 @@
             userData.ton_wallet_address = "";
             userData.ton_wallet_chain = "";
             userData.ton_wallet_app = "";
+            userData.ton_wallet_raw_address = "";
             userData.ton_wallet_updated_at = 0;
+            userData.ton_wallet_verified = false;
+            userData.ton_wallet_verified_at = 0;
             updateWalletButton();
 
             return true;
+        }
+
+        async function prepareTonProofRequest() {
+            if (!telegramInitData || !tonConnectUI) {
+                return false;
+            }
+
+            tonConnectUI.setConnectRequestParameters({
+                state: "loading"
+            });
+
+            try {
+                const response = await fetch(`${API_URL}/api/ton-proof/payload`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "Не удалось получить TON Proof challenge.");
+                }
+
+                if (!data.success || !data.payload) {
+                    throw new Error("Сервер не выдал TON Proof challenge.");
+                }
+
+                tonConnectUI.setConnectRequestParameters({
+                    state: "ready",
+                    value: {
+                        tonProof: data.payload
+                    }
+                });
+
+                return true;
+
+            } catch (error) {
+                console.error("Ошибка получения TON Proof challenge:", error);
+
+                // Убираем loader, чтобы TON Connect не завис в состоянии loading.
+                tonConnectUI.setConnectRequestParameters(null);
+                return false;
+            }
+        }
+
+        async function verifyTonProofOnServer(wallet) {
+            if (
+                tonProofVerificationInProgress ||
+                !wallet?.account ||
+                !wallet?.connectItems?.tonProof
+            ) {
+                return false;
+            }
+
+            const tonProofItem = wallet.connectItems.tonProof;
+
+            if (!("proof" in tonProofItem)) {
+                if (tonProofReconnectRequested || tonConnectInitiatedByUser) {
+                    showAlert(
+                        "Этот кошелёк не вернул TON Proof. Попробуйте другой TON-кошелёк или обновите приложение кошелька."
+                    );
+                }
+                return false;
+            }
+
+            const account = wallet.account;
+            const proof = tonProofItem.proof;
+
+            if (
+                !account.address ||
+                !account.publicKey ||
+                !account.walletStateInit
+            ) {
+                showAlert("Кошелёк не передал данные, необходимые для TON Proof.");
+                return false;
+            }
+
+            tonProofVerificationInProgress = true;
+
+            try {
+                const response = await fetch(`${API_URL}/api/ton-proof/verify`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData,
+                        address: account.address,
+                        network: String(account.chain || ""),
+                        public_key: account.publicKey,
+                        wallet_state_init: account.walletStateInit,
+                        proof: {
+                            timestamp: Number(proof.timestamp),
+                            domain: {
+                                lengthBytes: Number(proof.domain?.lengthBytes || 0),
+                                value: String(proof.domain?.value || "")
+                            },
+                            signature: String(proof.signature || ""),
+                            payload: String(proof.payload || "")
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.detail || "TON Proof не прошёл проверку.");
+                }
+
+                if (!data.success || !data.wallet_verified) {
+                    throw new Error(data.reason || "Сервер не подтвердил владение кошельком.");
+                }
+
+                userData.ton_wallet_verified = true;
+                userData.ton_wallet_verified_at = Number(data.wallet_verified_at || 0);
+                tonProofReconnectRequested = false;
+                tonConnectInitiatedByUser = false;
+
+                updateWalletButton();
+                haptic("medium");
+                showAlert(
+                    `✅ TON-кошелёк подтверждён.
+${shortenTonAddress(userData.ton_wallet_address)}
+
+Теперь сервер криптографически подтвердил владение этим кошельком.`
+                );
+
+                return true;
+
+            } catch (error) {
+                console.error("Ошибка TON Proof:", error);
+                userData.ton_wallet_verified = false;
+                updateWalletButton();
+
+                showAlert(
+                    error.message ||
+                    "Не удалось подтвердить владение TON-кошельком."
+                );
+
+                return false;
+
+            } finally {
+                tonProofVerificationInProgress = false;
+            }
         }
 
         function askConfirm(message) {
@@ -1467,7 +1633,7 @@
             });
         }
 
-        function initTonConnect() {
+        async function initTonConnect() {
             if (!window.TON_CONNECT_UI) {
                 console.error("TON Connect UI SDK не загрузился.");
                 return;
@@ -1486,6 +1652,11 @@
                     }
                 };
 
+                // Заранее готовим одноразовый challenge для следующего подключения.
+                // Если кошелёк уже восстановится из старой сессии, подтверждение
+                // попросим только один раз при нажатии на кнопку кошелька.
+                await prepareTonProofRequest();
+
                 tonConnectUI.onStatusChange(
                     async (wallet) => {
                         updateWalletButton();
@@ -1498,7 +1669,11 @@
                             );
 
                             if (saved) {
-                                tonConnectInitiatedByUser = false;
+                                await verifyTonProofOnServer(wallet);
+
+                                if (!tonProofReconnectRequested) {
+                                    tonConnectInitiatedByUser = false;
+                                }
                             }
                         } else {
                             tonConnectInitiatedByUser = false;
@@ -1550,8 +1725,39 @@
                         userData.ton_wallet_address ||
                         "подключённый TON-кошелёк";
 
+                    if (!userData.ton_wallet_verified) {
+                        const verifyNow = await askConfirm(
+                            `Кошелёк ${shortenTonAddress(currentAddress)} уже подключён, но ещё не подтверждён TON Proof.
+
+Для проверки нужно один раз переподключить его. Продолжить?`
+                        );
+
+                        if (!verifyNow) {
+                            return;
+                        }
+
+                        tonProofReconnectRequested = true;
+                        tonConnectInitiatedByUser = true;
+
+                        await tonConnectUI.disconnect();
+
+                        const proofReady = await prepareTonProofRequest();
+
+                        if (!proofReady) {
+                            tonProofReconnectRequested = false;
+                            tonConnectInitiatedByUser = false;
+                            showAlert("Не удалось подготовить TON Proof. Попробуйте ещё раз.");
+                            return;
+                        }
+
+                        await tonConnectUI.openModal();
+                        return;
+                    }
+
                     const confirmed = await askConfirm(
-                        `Сейчас подключён ${shortenTonAddress(currentAddress)}.\n\nОтключить этот кошелёк?`
+                        `✅ Кошелёк ${shortenTonAddress(currentAddress)} подтверждён TON Proof.
+
+Отключить этот кошелёк?`
                     );
 
                     if (!confirmed) {
@@ -1565,10 +1771,18 @@
                     return;
                 }
 
+                const proofReady = await prepareTonProofRequest();
+
+                if (!proofReady) {
+                    showAlert("Не удалось подготовить TON Proof. Попробуйте ещё раз.");
+                    return;
+                }
+
                 tonConnectInitiatedByUser = true;
                 await tonConnectUI.openModal();
 
             } catch (error) {
+                tonProofReconnectRequested = false;
                 tonConnectInitiatedByUser = false;
                 console.error("Ошибка TON Connect:", error);
                 showAlert(error.message || "Не удалось открыть TON Connect.");

@@ -4,21 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.12: Clean admin UI — demo/test controls hidden -->
+    <!-- v11.0: Premium main-screen visual redesign -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
 
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #0f172a 100%);
-            --card-bg: rgba(22, 27, 34, 0.78);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent-green: #00ffcc;
-            --accent-blue: #38bdf8;
-            --accent-yellow: #facc15;
-            --text-main: #ffffff;
-            --text-muted: #94a3b8;
+            --bg-gradient:
+                radial-gradient(circle at 20% 0%, rgba(0, 229, 255, 0.14), transparent 34%),
+                radial-gradient(circle at 88% 18%, rgba(73, 91, 255, 0.13), transparent 31%),
+                linear-gradient(180deg, #07101d 0%, #091321 46%, #060b13 100%);
+            --card-bg: rgba(12, 24, 39, 0.72);
+            --card-bg-strong: rgba(12, 25, 42, 0.92);
+            --card-border: rgba(148, 196, 255, 0.11);
+            --accent-green: #45f5ce;
+            --accent-cyan: #38e8ff;
+            --accent-blue: #5a8cff;
+            --accent-yellow: #ffd86a;
+            --text-main: #f7fbff;
+            --text-soft: #c9d7e8;
+            --text-muted: #7f94aa;
+            --shadow-card: 0 18px 48px rgba(0, 0, 0, 0.28);
+            --shadow-cyan: 0 0 32px rgba(56, 232, 255, 0.16);
         }
 
         * {
@@ -44,8 +52,23 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 16px;
+            padding: 14px 14px 22px;
             overflow-x: hidden;
+            background-attachment: fixed;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.34;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+            background-size: 28px 28px;
+            mask-image: linear-gradient(to bottom, black, transparent 70%);
+            z-index: -1;
         }
 
         button,
@@ -55,99 +78,289 @@
 
         .container {
             width: 100%;
-            max-width: 420px;
+            max-width: 430px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 12px;
             padding-bottom: 30px;
         }
 
-        .profile-card {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            backdrop-filter: blur(16px);
-            border-radius: 20px;
-            padding: 18px 20px;
+        #main-menu {
+            animation: screenIn 420ms cubic-bezier(.2,.8,.2,1);
+        }
+
+        @keyframes screenIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .brand-bar {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            text-align: center;
-            gap: 8px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            justify-content: space-between;
+            padding: 4px 2px 3px;
         }
 
-        .profile-card h2 {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--text-main);
+        .brand-lockup {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
         }
 
-        .balance-badge {
+        .brand-mark {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            flex: 0 0 38px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #03121a;
+            font-size: 18px;
+            background: linear-gradient(145deg, #ecfeff, #77f7e0 52%, #65c7ff);
+            box-shadow:
+                0 8px 24px rgba(56, 232, 255, 0.24),
+                inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+
+        .brand-mark::after {
+            content: "";
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            right: -1px;
+            bottom: 2px;
+            border-radius: 50%;
+            background: #45f5ce;
+            border: 2px solid #07101d;
+        }
+
+        .brand-copy {
+            min-width: 0;
+        }
+
+        .brand-name {
+            font-size: 13px;
+            line-height: 1.15;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            white-space: nowrap;
+        }
+
+        .brand-subtitle {
+            margin-top: 3px;
+            color: var(--text-muted);
+            font-size: 9px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .live-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            background: rgba(0, 255, 204, 0.1);
-            border: 1px solid rgba(0, 255, 204, 0.3);
-            padding: 6px 14px;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 999px;
+            padding: 7px 9px;
+            border: 1px solid rgba(69, 245, 206, 0.16);
+            background: rgba(69, 245, 206, 0.055);
+            color: #a6ffed;
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            white-space: nowrap;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #45f5ce;
+            box-shadow: 0 0 0 0 rgba(69,245,206,0.4);
+            animation: livePulse 1.9s infinite;
+        }
+
+        @keyframes livePulse {
+            0% { box-shadow: 0 0 0 0 rgba(69,245,206,0.36); }
+            70% { box-shadow: 0 0 0 7px rgba(69,245,206,0); }
+            100% { box-shadow: 0 0 0 0 rgba(69,245,206,0); }
+        }
+
+        .profile-card {
+            position: relative;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 82% 15%, rgba(56,232,255,0.13), transparent 27%),
+                linear-gradient(145deg, rgba(17, 36, 57, 0.94), rgba(9, 20, 34, 0.90));
+            border: 1px solid rgba(116, 206, 255, 0.15);
+            border-radius: 24px;
+            padding: 18px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 14px;
+            text-align: left;
+            box-shadow: var(--shadow-card), var(--shadow-cyan);
+            backdrop-filter: blur(18px);
+        }
+
+        .profile-card::after {
+            content: "✈";
+            position: absolute;
+            right: 14px;
+            top: -20px;
+            font-size: 86px;
+            color: rgba(255,255,255,0.025);
+            transform: rotate(-12deg);
+            pointer-events: none;
+        }
+
+        .pilot-meta {
+            min-width: 0;
+        }
+
+        .pilot-kicker {
+            color: var(--accent-cyan);
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .profile-card h2 {
+            font-size: 21px;
+            line-height: 1.15;
+            font-weight: 850;
+            color: var(--text-main);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pilot-subline {
+            margin-top: 6px;
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        .balance-badge {
+            position: relative;
+            z-index: 1;
+            min-width: 108px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 2px;
+            background: rgba(69, 245, 206, 0.07);
+            border: 1px solid rgba(69, 245, 206, 0.17);
+            padding: 10px 12px;
+            border-radius: 16px;
             color: var(--accent-green);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+        }
+
+        .balance-label {
+            color: var(--text-muted);
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+        }
+
+        .balance-value-line {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            font-size: 20px;
+            line-height: 1;
+            font-weight: 900;
+            letter-spacing: -0.03em;
+        }
+
+        .balance-unit {
+            color: #9df8e6;
+            font-size: 10px;
+            letter-spacing: 0.08em;
+        }
+
+        .league-card {
+            overflow: hidden;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 216, 106, 0.16);
+            background:
+                radial-gradient(circle at 10% 0%, rgba(255,216,106,0.10), transparent 31%),
+                linear-gradient(155deg, rgba(19, 30, 48, 0.92), rgba(9, 18, 31, 0.92));
+            box-shadow: var(--shadow-card);
         }
 
         .leaderboard-banner {
-            background: linear-gradient(135deg, rgba(250, 204, 21, 0.15), rgba(56, 189, 248, 0.08));
-            border: 1px solid rgba(250, 204, 21, 0.3);
-            border-radius: 20px;
-            padding: 16px;
+            background: transparent;
+            border: none;
+            border-radius: 0;
+            padding: 15px 15px 13px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             cursor: pointer;
-            transition: transform 0.2s ease;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.18s ease, background 0.18s ease;
+            box-shadow: none;
         }
 
         .leaderboard-banner:active {
-            transform: scale(0.98);
+            transform: scale(0.985);
+            background: rgba(255,255,255,0.025);
         }
 
         .lb-left {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 11px;
+            min-width: 0;
         }
 
         .lb-icon {
-            font-size: 28px;
-            background: rgba(250, 204, 21, 0.2);
-            width: 48px;
-            height: 48px;
+            font-size: 20px;
+            background: linear-gradient(145deg, rgba(255,216,106,0.18), rgba(255,176,32,0.09));
+            width: 42px;
+            height: 42px;
+            flex: 0 0 42px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 14px;
+            border: 1px solid rgba(255,216,106,0.13);
         }
 
         .lb-info h3 {
-            font-size: 16px;
-            color: var(--accent-yellow);
-            font-weight: 700;
+            font-size: 14px;
+            color: #fff2bc;
+            font-weight: 850;
+            letter-spacing: 0.01em;
         }
 
         .lb-info p {
-            font-size: 13px;
+            margin-top: 3px;
+            font-size: 10px;
             color: var(--text-muted);
         }
 
         .info-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: var(--text-main);
-            width: 32px;
-            height: 32px;
+            flex: 0 0 30px;
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(255, 255, 255, 0.11);
+            color: #ddecf8;
+            width: 30px;
+            height: 30px;
             border-radius: 50%;
-            font-weight: bold;
+            font-size: 12px;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -157,68 +370,244 @@
         .menu-grid {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
+            margin-top: 1px;
         }
 
         .btn {
             width: 100%;
+            min-height: 52px;
             border: none;
-            border-radius: 16px;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 700;
+            border-radius: 17px;
+            padding: 15px 16px;
+            font-size: 14px;
+            font-weight: 820;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            gap: 9px;
+            transition:
+                transform 0.16s ease,
+                opacity 0.16s ease,
+                filter 0.16s ease,
+                border-color 0.16s ease;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
         }
 
         .btn:active {
-            transform: scale(0.97);
+            transform: scale(0.975);
+            filter: brightness(0.96);
         }
 
         .btn-ad {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background:
+                linear-gradient(135deg, rgba(40, 111, 255, 0.94), rgba(53, 79, 210, 0.98));
             color: white;
-            border: 1px solid rgba(59, 130, 246, 0.4);
+            border: 1px solid rgba(107, 169, 255, 0.25);
+            box-shadow: 0 12px 28px rgba(42, 85, 220, 0.20);
         }
 
         .btn-ad:disabled {
-            background: #334155;
-            color: #94a3b8;
+            background: rgba(45, 61, 80, 0.8);
+            color: #8092a7;
             cursor: not-allowed;
             box-shadow: none;
         }
 
         .btn-play {
-            background: linear-gradient(135deg, #00ffcc, #00b894);
-            color: #0d1117;
-            font-size: 18px;
-            box-shadow: 0 0 25px rgba(0, 255, 204, 0.3);
+            position: relative;
+            overflow: hidden;
+            min-height: 60px;
+            background:
+                linear-gradient(135deg, #66ffe0 0%, #3ee8cf 45%, #5bd5ff 100%);
+            color: #04131a;
+            font-size: 16px;
+            font-weight: 950;
+            letter-spacing: 0.035em;
+            box-shadow:
+                0 15px 34px rgba(62, 232, 207, 0.20),
+                0 0 30px rgba(91, 213, 255, 0.09);
+        }
+
+        .menu-grid > .action-with-info:first-child .btn-play::before {
+            content: "";
+            position: absolute;
+            top: -100%;
+            left: -50%;
+            width: 38%;
+            height: 300%;
+            transform: rotate(28deg);
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255,255,255,0.32),
+                transparent
+            );
+            animation: playShine 3.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes playShine {
+            0%, 58% { left: -60%; opacity: 0; }
+            66% { opacity: 1; }
+            82% { left: 130%; opacity: 0; }
+            100% { left: 130%; opacity: 0; }
         }
 
         .btn-secondary {
-            background: var(--card-bg);
-            border: 1px solid var(--card-border);
-            color: var(--text-main);
-            font-size: 14px;
-            padding: 14px;
+            background:
+                linear-gradient(145deg, rgba(18, 34, 53, 0.90), rgba(11, 24, 40, 0.88));
+            border: 1px solid rgba(139, 190, 232, 0.10);
+            color: var(--text-soft);
+            font-size: 12.5px;
+            padding: 13px 12px;
+            box-shadow: 0 9px 22px rgba(0,0,0,0.16);
         }
 
         .attempts-counter {
+            display: inline-flex;
+            align-self: center;
+            align-items: center;
+            justify-content: center;
+            min-height: 26px;
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.055);
             text-align: center;
-            font-size: 13px;
+            font-size: 9.5px;
+            font-weight: 700;
             color: var(--text-muted);
-            margin-top: -6px;
+            margin-top: -3px;
+            margin-bottom: 1px;
         }
 
         .row-group {
             display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 9px;
+        }
+
+        .row-group > .action-with-info {
+            min-width: 0;
+        }
+
+        #main-menu .weekly-summary {
+            margin: 0 13px 13px;
+            display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 8px;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            border-radius: 0;
+        }
+
+        #main-menu .weekly-summary-row {
+            min-height: 66px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            gap: 5px;
+            padding: 10px 11px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        #main-menu .weekly-summary-label {
+            font-size: 8.5px;
+            line-height: 1.25;
+            color: var(--text-muted);
+            font-weight: 750;
+            letter-spacing: 0.015em;
+        }
+
+        #main-menu .weekly-summary-value {
+            font-size: 13px;
+            line-height: 1.25;
+            color: var(--text-main);
+            font-weight: 900;
+        }
+
+        #main-menu .weekly-fund-value {
+            color: #ffe49a;
+        }
+
+        #main-menu .admin-fund-btn {
+            margin-left: 4px;
+            border-radius: 8px;
+            padding: 4px 6px;
+            font-size: 7.5px;
+        }
+
+        .previous-week-banner {
+            min-height: 58px;
+            background:
+                linear-gradient(145deg, rgba(14, 29, 47, 0.78), rgba(9, 20, 34, 0.75));
+            border: 1px solid rgba(139, 190, 232, 0.08);
+            border-radius: 18px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: transform 0.16s ease, border-color 0.16s ease;
+            box-shadow: 0 9px 24px rgba(0,0,0,0.14);
+        }
+
+        .previous-week-banner:active {
+            transform: scale(0.985);
+        }
+
+        .previous-week-title {
+            color: #dce8f5;
+            font-size: 11.5px;
+            font-weight: 800;
+        }
+
+        .previous-week-subtitle {
+            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 9.5px;
+        }
+
+        #main-menu .action-with-info {
+            position: relative;
+        }
+
+        #main-menu .context-info-btn {
+            width: 28px;
+            height: 28px;
+            right: 10px;
+            font-size: 11px;
+            color: #ddecf8;
+            background: rgba(4, 13, 24, 0.38);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: none;
+        }
+
+        #main-menu .action-with-info > .btn {
+            padding-right: 46px;
+        }
+
+        .section-label {
+            margin: 3px 2px -2px;
+            color: #6f849b;
+            font-size: 8.5px;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #main-menu,
+            .live-dot,
+            .menu-grid > .action-with-info:first-child .btn-play::before {
+                animation: none !important;
+            }
         }
 
         .modal {
@@ -1236,44 +1625,71 @@
          ГЛАВНОЕ МЕНЮ
          ========================================================= -->
     <div class="container" id="main-menu">
-        <div class="profile-card">
-            <h2 id="user-name">Пилот</h2>
-            <div class="balance-badge">
-                💎 <span id="user-score">0</span> ADP
-            </div>
-        </div>
-
-        <div class="leaderboard-banner" onclick="openLeaderboard()">
-            <div class="lb-left">
-                <div class="lb-icon">🏆</div>
-                <div class="lb-info">
-                    <h3>Топ-10 пилотов</h3>
-                    <p>Текущий рейтинг недели</p>
+        <div class="brand-bar">
+            <div class="brand-lockup">
+                <div class="brand-mark">✈</div>
+                <div class="brand-copy">
+                    <div class="brand-name">ADP FLIGHT LEAGUE</div>
+                    <div class="brand-subtitle">Weekly aviation challenge</div>
                 </div>
             </div>
 
-            <button
-                class="info-btn"
-                onclick="event.stopPropagation(); openRules();"
-                aria-label="Как работает рейтинг"
-            >!</button>
+            <div class="live-pill">
+                <span class="live-dot"></span>
+                LIVE WEEK
+            </div>
         </div>
 
-        <div class="weekly-summary">
-            <div class="weekly-summary-row">
-                <span class="weekly-summary-label">🏆 Общий призовой фонд</span>
-                <span class="weekly-summary-value weekly-fund-value">
-                    <span id="weekly-prize-pool">—</span> TON
-                    <button
-                        class="admin-fund-btn"
-                        id="admin-fund-btn"
-                        onclick="openPrizePoolEditor()"
-                    >✏️ Изменить</button>
-                </span>
+        <div class="profile-card">
+            <div class="pilot-meta">
+                <div class="pilot-kicker">YOUR PILOT PROFILE</div>
+                <h2 id="user-name">Пилот</h2>
+                <div class="pilot-subline">Недельный результат</div>
             </div>
-            <div class="weekly-summary-row">
-                <span class="weekly-summary-label">⏳ До фиксации рейтинга</span>
-                <span class="weekly-summary-value" id="weekly-countdown">—</span>
+
+            <div class="balance-badge">
+                <div class="balance-label">BALANCE</div>
+                <div class="balance-value-line">
+                    <span id="user-score">0</span>
+                    <span class="balance-unit">ADP</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="league-card">
+            <div class="leaderboard-banner" onclick="openLeaderboard()">
+                <div class="lb-left">
+                    <div class="lb-icon">🏆</div>
+                    <div class="lb-info">
+                        <h3>Недельная лига · Top-10</h3>
+                        <p>Открыть текущий рейтинг пилотов</p>
+                    </div>
+                </div>
+
+                <button
+                    class="info-btn"
+                    onclick="event.stopPropagation(); openRules();"
+                    aria-label="Как работает рейтинг"
+                >!</button>
+            </div>
+
+            <div class="weekly-summary">
+                <div class="weekly-summary-row">
+                    <span class="weekly-summary-label">ПРИЗОВОЙ ФОНД</span>
+                    <span class="weekly-summary-value weekly-fund-value">
+                        <span id="weekly-prize-pool">—</span> TON
+                        <button
+                            class="admin-fund-btn"
+                            id="admin-fund-btn"
+                            onclick="openPrizePoolEditor()"
+                        >✏️ Изменить</button>
+                    </span>
+                </div>
+
+                <div class="weekly-summary-row">
+                    <span class="weekly-summary-label">ДО ФИКСАЦИИ</span>
+                    <span class="weekly-summary-value" id="weekly-countdown">—</span>
+                </div>
             </div>
         </div>
 
@@ -1285,7 +1701,24 @@
             <div style="color: var(--text-muted); font-size: 18px;">›</div>
         </div>
 
+        <div class="section-label">FLIGHT CONTROL</div>
+
         <div class="menu-grid">
+            <div class="action-with-info">
+                <button class="btn btn-play" onclick="startGame()">
+                    ✈️ НАЧАТЬ ПОЛЁТ
+                </button>
+                <button
+                    class="context-info-btn"
+                    onclick="openContextHelp('flight')"
+                    aria-label="Как проходит полёт"
+                >!</button>
+            </div>
+
+            <div class="attempts-counter" id="attempts-text">
+                Доступно попыток полета: 0
+            </div>
+
             <div class="action-with-info">
                 <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
                     📺 Смотреть рекламу (+50 ADP)
@@ -1297,24 +1730,11 @@
                 >!</button>
             </div>
 
-            <div class="attempts-counter" id="attempts-text">
-                Доступно попыток полета: 0
-            </div>
-
-            <div class="action-with-info">
-                <button class="btn btn-play" onclick="startGame()">
-                    🚀 НАЧАТЬ ПОЛЕТ
-                </button>
-                <button
-                    class="context-info-btn"
-                    onclick="openContextHelp('flight')"
-                    aria-label="Как проходит полёт"
-                >!</button>
-            </div>
+            <div class="section-label">PILOT SERVICES</div>
 
             <div class="row-group">
                 <button class="btn btn-secondary" onclick="openReferral()">
-                    👥 Рефералы (+10 ADP)
+                    👥 Рефералы (+10)
                 </button>
 
                 <div class="action-with-info">
@@ -1330,9 +1750,8 @@
             </div>
 
             <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
-                💬 Присоединиться в чат (+10 ADP)
+                💬 Присоединиться в Community (+10 ADP)
             </button>
-
         </div>
     </div>
 

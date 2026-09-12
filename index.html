@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.7.2: forced previous-week grid layout + cache check marker -->
+    <!-- v10.8: payout transaction hash + payment history -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -623,6 +623,45 @@
             grid-template-columns: 1fr 1fr;
             gap: 7px;
             margin-top: 9px;
+        }
+
+        .admin-payout-tx-wrap {
+            margin-top: 9px;
+        }
+
+        .admin-payout-tx-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(0,0,0,0.20);
+            color: #ffffff;
+            border-radius: 10px;
+            padding: 10px 11px;
+            font-size: 10px;
+            outline: none;
+        }
+
+        .admin-payout-tx-input:focus {
+            border-color: rgba(0,255,204,0.45);
+        }
+
+        .admin-payout-paid-info {
+            margin-top: 9px;
+            padding: 9px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,204,0.18);
+            background: rgba(0,255,204,0.055);
+            font-size: 10px;
+            line-height: 1.45;
+            color: #c8fff5;
+        }
+
+        .admin-payout-paid-hash {
+            display: block;
+            margin-top: 4px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+            color: #ffffff;
+            overflow-wrap: anywhere;
         }
 
         .admin-mini-btn {
@@ -2196,14 +2235,43 @@
                     copyButton.className = "admin-mini-btn";
                     copyButton.textContent = "📋 Адрес (DEMO)";
                     copyButton.disabled = true;
+                    actions.appendChild(copyButton);
+
+                    if (item.payout_status === "paid") {
+                        const copyTxButton = document.createElement("button");
+                        copyTxButton.className = "admin-mini-btn";
+                        copyTxButton.textContent = "🧾 tx (DEMO)";
+                        copyTxButton.disabled = true;
+                        actions.appendChild(copyTxButton);
+
+                        const paidInfo = document.createElement("div");
+                        paidInfo.className = "admin-payout-paid-info";
+                        paidInfo.innerHTML =
+                            `✅ DEMO: выплачено ${formatUtcDateTime(item.paid_at)}`
+                            + `<span class="admin-payout-paid-hash">tx: ${shortTxHash(item.tx_hash)}</span>`;
+
+                        card.append(top, address, meta, paidInfo, actions);
+                        list.appendChild(card);
+                        return;
+                    }
+
+                    const txWrap = document.createElement("div");
+                    txWrap.className = "admin-payout-tx-wrap";
+
+                    const txInput = document.createElement("input");
+                    txInput.className = "admin-payout-tx-input";
+                    txInput.type = "text";
+                    txInput.placeholder = "Хэш TON-транзакции (DEMO)";
+                    txInput.disabled = true;
+                    txWrap.appendChild(txInput);
 
                     const paidButton = document.createElement("button");
                     paidButton.className = "admin-mini-btn";
-                    paidButton.textContent = "✓ Выплата (DEMO)";
+                    paidButton.textContent = "✓ Подтвердить (DEMO)";
                     paidButton.disabled = true;
+                    actions.appendChild(paidButton);
 
-                    actions.append(copyButton, paidButton);
-                    card.append(top, address, meta, actions);
+                    card.append(top, address, meta, txWrap, actions);
                     list.appendChild(card);
                 });
 
@@ -2237,6 +2305,27 @@
                 showAlert("Не удалось скопировать автоматически.");
             }
         }
+
+        function formatUtcDateTime(timestampSeconds) {
+            const date = new Date(Number(timestampSeconds || 0) * 1000);
+            if (Number.isNaN(date.getTime()) || !timestampSeconds) return "—";
+
+            return date.toLocaleString("ru-RU", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "UTC"
+            }) + " UTC";
+        }
+
+        function shortTxHash(value) {
+            const text = String(value || "");
+            if (text.length <= 24) return text;
+            return `${text.slice(0, 11)}…${text.slice(-9)}`;
+        }
+
 
         async function openAdminPayouts() {
             if (!userData.is_admin) {
@@ -2352,25 +2441,77 @@
                             "TON-адрес скопирован."
                         );
 
-                    const paidButton = document.createElement("button");
-                    paidButton.className = "admin-mini-btn";
-                    paidButton.textContent =
-                        item.payout_status === "paid"
-                        ? "✅ Выплачено"
-                        : "✓ Отметить выплаченным";
-                    paidButton.disabled =
-                        item.payout_status === "paid" ||
+                    actions.appendChild(copyButton);
+
+                    if (item.payout_status === "paid") {
+                        const copyTxButton = document.createElement("button");
+                        copyTxButton.className = "admin-mini-btn";
+                        copyTxButton.textContent = "🧾 Копировать tx";
+                        copyTxButton.disabled = !item.tx_hash;
+                        copyTxButton.onclick = () =>
+                            copyTextValue(
+                                item.tx_hash,
+                                "Хэш TON-транзакции скопирован."
+                            );
+
+                        actions.appendChild(copyTxButton);
+
+                        const paidInfo = document.createElement("div");
+                        paidInfo.className = "admin-payout-paid-info";
+                        paidInfo.innerHTML =
+                            `✅ Выплачено: ${formatUtcDateTime(item.paid_at)}`
+                            + `<span class="admin-payout-paid-hash">tx: ${shortTxHash(item.tx_hash)}</span>`;
+
+                        card.append(top, address, meta, paidInfo, actions);
+                        list.appendChild(card);
+                        return;
+                    }
+
+                    const txWrap = document.createElement("div");
+                    txWrap.className = "admin-payout-tx-wrap";
+
+                    const txInput = document.createElement("input");
+                    txInput.className = "admin-payout-tx-input";
+                    txInput.type = "text";
+                    txInput.autocomplete = "off";
+                    txInput.spellcheck = false;
+                    txInput.placeholder = "Вставьте полный хэш TON-транзакции";
+                    txInput.disabled =
                         !item.wallet_verified ||
                         !item.wallet_address;
 
+                    txWrap.appendChild(txInput);
+
+                    const paidButton = document.createElement("button");
+                    paidButton.className = "admin-mini-btn";
+                    paidButton.textContent = "✓ Подтвердить выплату";
+                    paidButton.disabled =
+                        !item.wallet_verified ||
+                        !item.wallet_address;
+
+                    actions.appendChild(paidButton);
+
                     paidButton.onclick = async () => {
+                        const txHash = String(txInput.value || "").trim();
+
+                        if (txHash.length < 16 || /\s/.test(txHash)) {
+                            showAlert(
+                                "Сначала вставьте полный хэш TON-транзакции без пробелов."
+                            );
+                            txInput.focus();
+                            return;
+                        }
+
                         const confirmed = await askConfirm(
-                            `Подтвердить, что ${item.prize_ton} TON уже отправлены игроку ${displayPlayerName(item)}?`
+                            `Подтвердить выплату ${item.prize_ton} TON игроку ${displayPlayerName(item)}?\n\nХэш транзакции будет сохранён в истории.`
                         );
 
                         if (!confirmed) return;
 
                         try {
+                            paidButton.disabled = true;
+                            paidButton.textContent = "⏳ Сохраняем...";
+
                             const markResponse = await fetch(
                                 `${API_URL}/api/admin/weekly-payouts/mark-paid`,
                                 {
@@ -2383,7 +2524,7 @@
                                         init_data: telegramInitData,
                                         week_id: data.week.id,
                                         telegram_id: item.telegram_id,
-                                        tx_hash: ""
+                                        tx_hash: txHash
                                     })
                                 }
                             );
@@ -2397,10 +2538,13 @@
                                 );
                             }
 
+                            haptic("medium");
                             await openAdminPayouts();
 
                         } catch (error) {
                             console.error("Ошибка отметки выплаты:", error);
+                            paidButton.disabled = false;
+                            paidButton.textContent = "✓ Подтвердить выплату";
                             showAlert(
                                 error.message ||
                                 "Не удалось изменить статус выплаты."
@@ -2408,8 +2552,7 @@
                         }
                     };
 
-                    actions.append(copyButton, paidButton);
-                    card.append(top, address, meta, actions);
+                    card.append(top, address, meta, txWrap, actions);
                     list.appendChild(card);
                 });
 

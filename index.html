@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v10.8: payout transaction hash + payment history -->
+    <!-- v10.8.2: payout history status consistency -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -2225,8 +2225,13 @@
 
                     const meta = document.createElement("div");
                     meta.className = "admin-payout-meta";
+
+                    const demoPayoutText = item.payout_status === "paid"
+                        ? "✅ Выплачено"
+                        : "⏳ Ожидает выплаты";
+
                     meta.textContent =
-                        `🧪 DEMO · ✅ TON Proof · ⏳ Ожидает выплаты · ${Number(item.final_adp || 0).toLocaleString("ru-RU")} ADP`;
+                        `🧪 DEMO · ✅ TON Proof · ${demoPayoutText} · ${Number(item.final_adp || 0).toLocaleString("ru-RU")} ADP`;
 
                     const actions = document.createElement("div");
                     actions.className = "admin-payout-actions";
@@ -2247,7 +2252,7 @@
                         const paidInfo = document.createElement("div");
                         paidInfo.className = "admin-payout-paid-info";
                         paidInfo.innerHTML =
-                            `✅ DEMO: выплачено ${formatUtcDateTime(item.paid_at)}`
+                            `✅ Выплачено · ${formatUtcDateTime(item.paid_at)}`
                             + `<span class="admin-payout-paid-hash">tx: ${shortTxHash(item.tx_hash)}</span>`;
 
                         card.append(top, address, meta, paidInfo, actions);

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.5: Final flight visual polish + near-miss feedback -->
+    <!-- v11.6: Main screen spacing + clearer ADP actions -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -617,12 +617,12 @@
            ========================================================= */
 
         #main-menu {
-            gap: 10px;
+            gap: 13px;
         }
 
         #main-menu .brand-bar {
-            min-height: 42px;
-            padding: 0 2px;
+            min-height: 46px;
+            padding: 1px 2px;
         }
 
         #main-menu .brand-lockup {
@@ -680,8 +680,8 @@
         .flight-hub {
             position: relative;
             overflow: hidden;
-            border-radius: 22px;
-            padding: 15px;
+            border-radius: 24px;
+            padding: 17px;
             background:
                 radial-gradient(circle at 92% 10%, rgba(56,232,255,0.13), transparent 30%),
                 linear-gradient(145deg, rgba(14, 31, 50, 0.95), rgba(8, 20, 34, 0.94));
@@ -707,7 +707,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
         .flight-user-copy {
@@ -761,9 +761,9 @@
         }
 
         #main-menu .flight-primary .btn-play {
-            min-height: 56px;
-            border-radius: 17px;
-            font-size: 15px;
+            min-height: 60px;
+            border-radius: 18px;
+            font-size: 15.5px;
         }
 
         #main-menu .flight-primary .context-info-btn {
@@ -777,8 +777,8 @@
             position: relative;
             z-index: 1;
             width: 100%;
-            margin: 8px 0 0;
-            min-height: 22px;
+            margin: 10px 0 0;
+            min-height: 24px;
             padding: 4px 8px;
             border: 0;
             background: transparent;
@@ -787,8 +787,8 @@
         }
 
         .compact-section {
-            border-radius: 19px;
-            padding: 12px;
+            border-radius: 21px;
+            padding: 14px;
             background: rgba(11, 24, 40, 0.68);
             border: 1px solid rgba(139, 190, 232, 0.075);
             box-shadow: 0 10px 26px rgba(0,0,0,0.15);
@@ -799,7 +799,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 8px;
-            margin-bottom: 9px;
+            margin-bottom: 11px;
         }
 
         .compact-section-title {
@@ -815,8 +815,8 @@
 
         .bonus-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 7px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
         }
 
         .bonus-item {
@@ -824,22 +824,36 @@
             min-width: 0;
         }
 
+        .bonus-item.bonus-primary {
+            grid-column: 1 / -1;
+        }
+
         #main-menu .bonus-item .btn {
-            min-height: 61px;
-            height: 61px;
-            border-radius: 14px;
-            padding: 9px 6px;
-            font-size: 10px;
-            line-height: 1.22;
+            min-height: 64px;
+            height: 64px;
+            border-radius: 15px;
+            padding: 10px 9px;
+            font-size: 10.5px;
+            line-height: 1.25;
             text-align: center;
             white-space: normal;
             box-shadow: none;
         }
 
+        #main-menu .bonus-item.bonus-primary .btn {
+            min-height: 54px;
+            height: 54px;
+            justify-content: flex-start;
+            padding-left: 15px;
+            padding-right: 48px;
+            font-size: 11.5px;
+            text-align: left;
+        }
+
         #main-menu .bonus-item .btn-ad {
             background:
-                linear-gradient(145deg, rgba(41, 101, 220, 0.92), rgba(39, 68, 171, 0.92));
-            border: 1px solid rgba(107,169,255,0.20);
+                linear-gradient(135deg, rgba(43, 112, 236, 0.96), rgba(48, 72, 184, 0.96));
+            border: 1px solid rgba(107,169,255,0.22);
         }
 
         #main-menu .bonus-item .btn-secondary {
@@ -850,22 +864,54 @@
         }
 
         #main-menu .bonus-item .context-info-btn {
-            top: 6px;
-            right: 6px;
+            top: 7px;
+            right: 7px;
             transform: none;
-            width: 21px;
-            height: 21px;
+            width: 22px;
+            height: 22px;
             font-size: 9px;
             background: rgba(4,13,24,0.46);
+        }
+
+        #main-menu .bonus-item.bonus-primary .context-info-btn {
+            top: 50%;
+            right: 11px;
+            transform: translateY(-50%);
+            width: 27px;
+            height: 27px;
+            font-size: 10px;
         }
 
         #main-menu .bonus-item .context-info-btn:active {
             transform: scale(0.94);
         }
 
+        #main-menu .bonus-item.bonus-primary .context-info-btn:active {
+            transform: translateY(-50%) scale(0.94);
+        }
+
+        .bonus-card-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .bonus-card-title {
+            font-size: 10.5px;
+            font-weight: 900;
+            color: #e8f3fb;
+        }
+
+        .bonus-card-reward {
+            font-size: 9px;
+            font-weight: 850;
+            color: #73f4dd;
+        }
+
         .league-compact {
             overflow: hidden;
-            border-radius: 19px;
+            border-radius: 21px;
             background:
                 radial-gradient(circle at 5% 0%, rgba(255,216,106,0.075), transparent 31%),
                 linear-gradient(145deg, rgba(16, 29, 46, 0.86), rgba(9, 20, 34, 0.86));
@@ -878,7 +924,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 10px;
-            padding: 11px 12px 8px;
+            padding: 13px 14px 10px;
         }
 
         .league-compact-title {
@@ -900,14 +946,14 @@
         .league-stats-row {
             display: grid;
             grid-template-columns: 1fr 1.35fr;
-            gap: 7px;
-            padding: 0 12px 9px;
+            gap: 8px;
+            padding: 0 14px 11px;
         }
 
         .league-stat {
             min-width: 0;
-            padding: 8px 9px;
-            border-radius: 12px;
+            padding: 10px 10px;
+            border-radius: 13px;
             background: rgba(255,255,255,0.03);
             border: 1px solid rgba(255,255,255,0.045);
         }
@@ -948,7 +994,7 @@
         }
 
         .league-link {
-            min-height: 38px;
+            min-height: 42px;
             border: 0;
             background: transparent;
             color: #cdd9e7;
@@ -972,6 +1018,22 @@
 
         #previous-week-subtitle {
             display: none;
+        }
+
+        @media (max-width: 340px) {
+            .bonus-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .bonus-item.bonus-primary {
+                grid-column: auto;
+            }
+
+            #main-menu .bonus-item .btn,
+            #main-menu .bonus-item.bonus-primary .btn {
+                min-height: 52px;
+                height: auto;
+            }
         }
 
         @media (max-width: 360px) {
@@ -2446,11 +2508,11 @@
         <div class="compact-section">
             <div class="compact-section-head">
                 <div class="compact-section-title">Получить ADP</div>
-                <div class="compact-section-note">Дополнительные способы</div>
+                <div class="compact-section-note">Бонусы и попытки</div>
             </div>
 
-            <div class="bonus-grid">
-                <div class="bonus-item">
+                        <div class="bonus-grid">
+                <div class="bonus-item bonus-primary">
                     <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
                         📺 Реклама +50 ADP
                     </button>
@@ -2463,17 +2525,22 @@
 
                 <div class="bonus-item">
                     <button class="btn btn-secondary" onclick="openReferral()">
-                        👥 Рефералы +10
+                        <span class="bonus-card-copy">
+                            <span class="bonus-card-title">👥 Рефералы</span>
+                            <span class="bonus-card-reward">+10 ADP за активацию</span>
+                        </span>
                     </button>
                 </div>
 
                 <div class="bonus-item">
                     <button class="btn btn-secondary" id="btn-community" onclick="openCommunity()">
-                        💬 Чат +10
+                        <span class="bonus-card-copy">
+                            <span class="bonus-card-title">💬 Чат</span>
+                            <span class="bonus-card-reward">+10 ADP один раз</span>
+                        </span>
                     </button>
                 </div>
             </div>
-        </div>
 
         <div class="league-compact">
             <div class="league-compact-head">
@@ -3944,9 +4011,21 @@
             const button = document.getElementById("btn-community");
             if (!button) return;
 
-            button.innerHTML = userData.community?.claimed
-                ? "✅ Чат: бонус получен"
-                : "💬 Чат +10 ADP";
+            if (userData.community?.claimed) {
+                button.innerHTML = `
+                    <span class="bonus-card-copy">
+                        <span class="bonus-card-title">✅ Чат</span>
+                        <span class="bonus-card-reward">Бонус получен</span>
+                    </span>
+                `;
+            } else {
+                button.innerHTML = `
+                    <span class="bonus-card-copy">
+                        <span class="bonus-card-title">💬 Чат</span>
+                        <span class="bonus-card-reward">+10 ADP один раз</span>
+                    </span>
+                `;
+            }
         }
 
         function renderCommunityModal() {
@@ -4302,13 +4381,13 @@
 
             if (userData.is_admin) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Тестовая реклама +50";
+                btnAd.innerHTML = "📺 Тестовая реклама · +50 ADP";
                 return false;
             }
 
             if (userData.daily_ads_count >= DAILY_AD_LIMIT) {
                 btnAd.disabled = true;
-                btnAd.innerHTML = "✅ Реклама 5/5";
+                btnAd.innerHTML = "✅ Лимит рекламы на сегодня";
                 return false;
             }
 
@@ -4318,7 +4397,7 @@
 
             if (userData.last_ad_time === 0 || remaining <= 0) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Реклама +50 ADP";
+                btnAd.innerHTML = "📺 Реклама · +50 ADP";
                 return false;
             }
 

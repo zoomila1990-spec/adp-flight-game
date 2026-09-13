@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.4: Unified premium modal system -->
+    <!-- v12.4.1: Centered referral pilots + reduced chat icon -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -5522,6 +5522,64 @@
                 width: 26px !important;
                 height: 26px !important;
                 flex-basis: 26px !important;
+            }
+        }
+
+
+        /* =========================================================
+           v12.4.1 — precise modal icon alignment
+           ========================================================= */
+
+        /* REFERRALS:
+           center the pilots artwork inside the feature square.
+           We no longer overscale it, so the composition sits evenly
+           with equal breathing room on all sides. */
+        #modal-referral .modal-feature-icon .adp-icon-pilots {
+            width: 84px !important;
+            height: 84px !important;
+            flex: 0 0 84px !important;
+            margin: 0 auto !important;
+            background-size: 104% !important;
+            background-position: 50% 50% !important;
+            background-repeat: no-repeat !important;
+            transform: none !important;
+        }
+
+        /* CHAT:
+           slightly reduce the artwork so the whole speech-bubble icon
+           fits comfortably inside the square instead of touching edges. */
+        #modal-community .modal-feature-icon .adp-icon-chat {
+            width: 80px !important;
+            height: 80px !important;
+            flex: 0 0 80px !important;
+            margin: 0 auto !important;
+            background-size: 98% !important;
+            background-position: 50% 50% !important;
+            background-repeat: no-repeat !important;
+            transform: none !important;
+        }
+
+        /* Keep both feature tiles themselves perfectly centered. */
+        #modal-referral .modal-feature-icon,
+        #modal-community .modal-feature-icon {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+
+        @media (max-width: 360px) {
+            #modal-referral .modal-feature-icon .adp-icon-pilots {
+                width: 78px !important;
+                height: 78px !important;
+                flex-basis: 78px !important;
+                background-size: 104% !important;
+            }
+
+            #modal-community .modal-feature-icon .adp-icon-chat {
+                width: 74px !important;
+                height: 74px !important;
+                flex-basis: 74px !important;
+                background-size: 98% !important;
             }
         }
 

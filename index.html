@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.9: RU/EN/KK localization + Telegram auto language -->
+    <!-- v12.9.1: RU/EN/KK localization — multiline text fix -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -7351,14 +7351,43 @@
 
         document.documentElement.lang = currentLanguage;
 
+        function normalizeI18nKey(value) {
+            return String(value ?? "")
+                .replace(/\s+/g, " ")
+                .trim();
+        }
+
+        const I18N_STATIC_NORMALIZED =
+            Object.fromEntries(
+                Object.entries(I18N_STATIC).map(
+                    ([key, value]) => [
+                        normalizeI18nKey(key),
+                        value
+                    ]
+                )
+            );
+
+        const I18N_RUNTIME_NORMALIZED =
+            Object.fromEntries(
+                Object.entries(I18N_RUNTIME).map(
+                    ([key, value]) => [
+                        normalizeI18nKey(key),
+                        value
+                    ]
+                )
+            );
+
         function exactTranslation(source) {
             if (currentLanguage === "ru") {
                 return source;
             }
 
+            const normalized =
+                normalizeI18nKey(source);
+
             const item =
-                I18N_STATIC[source]
-                || I18N_RUNTIME[source];
+                I18N_STATIC_NORMALIZED[normalized]
+                || I18N_RUNTIME_NORMALIZED[normalized];
 
             return item?.[currentLanguage] || source;
         }
@@ -7374,10 +7403,14 @@
             }
 
             const trimmed = source.trim();
-            const exact = exactTranslation(trimmed);
+            const normalized =
+                normalizeI18nKey(trimmed);
 
-            if (exact !== trimmed) {
-                return source.replace(trimmed, exact);
+            const exact =
+                exactTranslation(normalized);
+
+            if (exact !== normalized) {
+                return exact;
             }
 
             let match;
@@ -7559,10 +7592,13 @@
 
             if (!trimmed) return;
 
-            const translated =
-                localizeRuntimeText(trimmed);
+            const normalized =
+                normalizeI18nKey(trimmed);
 
-            if (translated === trimmed) return;
+            const translated =
+                localizeRuntimeText(normalized);
+
+            if (translated === normalized) return;
 
             const leading =
                 raw.match(/^\s*/)?.[0] || "";
@@ -7585,10 +7621,13 @@
 
                 if (!value) continue;
 
-                const translated =
-                    localizeRuntimeText(value);
+                const normalized =
+                    normalizeI18nKey(value);
 
-                if (translated !== value) {
+                const translated =
+                    localizeRuntimeText(normalized);
+
+                if (translated !== normalized) {
                     element.setAttribute(
                         attr,
                         translated

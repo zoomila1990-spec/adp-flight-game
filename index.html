@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.3: Reference-match main screen polish -->
+    <!-- v12.3.1: Smooth hero transition + transparent takeoff icon -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -4632,6 +4632,98 @@
                 width: 43px !important;
                 height: 43px !important;
                 flex-basis: 43px !important;
+            }
+        }
+
+
+        /* =========================================================
+           v12.3.1 — requested refinements
+           1) hero now dissolves into the page instead of ending as a strip
+           2) takeoff plane/runway icon is transparent, without a sky square
+           ========================================================= */
+
+        #main-menu {
+            background:
+                radial-gradient(circle at 50% 4%, rgba(18, 117, 179, 0.18), transparent 34%),
+                linear-gradient(180deg, #06385f 0%, #04223d 23%, #04192d 45%, #031321 100%);
+        }
+
+        .reference-main-hero {
+            margin-bottom: -24px !important;
+            z-index: 0;
+            background-size: 100% 100% !important;
+            background-position: center top !important;
+
+            /* Fade the actual image into the page background. */
+            -webkit-mask-image: linear-gradient(
+                to bottom,
+                #000 0%,
+                #000 67%,
+                rgba(0,0,0,0.96) 76%,
+                rgba(0,0,0,0.76) 86%,
+                rgba(0,0,0,0.34) 95%,
+                transparent 100%
+            );
+            mask-image: linear-gradient(
+                to bottom,
+                #000 0%,
+                #000 67%,
+                rgba(0,0,0,0.96) 76%,
+                rgba(0,0,0,0.76) 86%,
+                rgba(0,0,0,0.34) 95%,
+                transparent 100%
+            );
+        }
+
+        /* Additional soft blend below the hero for Telegram WebView
+           even if mask rendering differs between platforms. */
+        .reference-main-hero::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -1px;
+            height: 46%;
+            pointer-events: none;
+            background: linear-gradient(
+                to bottom,
+                rgba(4, 42, 72, 0) 0%,
+                rgba(4, 35, 61, 0.08) 28%,
+                rgba(4, 29, 51, 0.38) 62%,
+                rgba(4, 25, 44, 0.90) 100%
+            );
+        }
+
+        #main-menu .flight-hub {
+            position: relative;
+            z-index: 2;
+            margin-top: 0 !important;
+        }
+
+        /* Takeoff button keeps its cloud background, but the icon itself
+           is now a transparent plane + runway + glow. */
+        #main-menu .flight-primary .btn-play::before {
+            left: 11px !important;
+            top: 7px !important;
+            bottom: 7px !important;
+            width: 84px !important;
+            border-radius: 0 !important;
+            background:
+                url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNDAgMTAwIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0icGxhbmUiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwIiBzdG9wLWNvbG9yPSIjMTAyZjg3Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iMC41NSIgc3RvcC1jb2xvcj0iIzA3MWY2NyIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMwMzE3NDciLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9InJ1bndheSIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMyNmM5ZmYiIHN0b3Atb3BhY2l0eT0iLjE1Ii8+CiAgICAgIDxzdG9wIG9mZnNldD0iLjUiIHN0b3AtY29sb3I9IiNmZmZmZmYiIHN0b3Atb3BhY2l0eT0iLjkyIi8+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzI2YzlmZiIgc3RvcC1vcGFjaXR5PSIuMTUiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImNlbnRlciIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNmZmYzYTYiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjZmZjNTJmIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGZpbHRlciBpZD0iZ2xvdyIgeD0iLTgwJSIgeT0iLTgwJSIgd2lkdGg9IjI2MCUiIGhlaWdodD0iMjYwJSI+CiAgICAgIDxmZUdhdXNzaWFuQmx1ciBzdGREZXZpYXRpb249IjQiIHJlc3VsdD0iYiIvPgogICAgICA8ZmVNZXJnZT4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49ImIiLz4KICAgICAgICA8ZmVNZXJnZU5vZGUgaW49IlNvdXJjZUdyYXBoaWMiLz4KICAgICAgPC9mZU1lcmdlPgogICAgPC9maWx0ZXI+CiAgPC9kZWZzPgoKICA8IS0tIHNvZnQgaGFsbyAtLT4KICA8ZWxsaXBzZSBjeD0iNzAiIGN5PSI1MiIgcng9IjQ4IiByeT0iMzEiIGZpbGw9IiM1OGVjZmYiIG9wYWNpdHk9Ii4xMCIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+CgogIDwhLS0gcnVud2F5IC0tPgogIDxnIG9wYWNpdHk9Ii45OCI+CiAgICA8cGF0aCBkPSJNMzQgOTQgTDU3IDYxIEw2MyA2MSBMNTMgOTQgWiIgZmlsbD0idXJsKCNydW53YXkpIi8+CiAgICA8cGF0aCBkPSJNMTA2IDk0IEw4MyA2MSBMNzcgNjEgTDg3IDk0IFoiIGZpbGw9InVybCgjcnVud2F5KSIvPgogICAgPHBhdGggZD0iTTU5IDk0IEw2NyA2MSBMNzMgNjEgTDgxIDk0IFoiIGZpbGw9IiNkOWY4ZmYiIG9wYWNpdHk9Ii45NSIvPgogICAgPHBhdGggZD0iTTY3IDk0IEw2OS4yIDYxIEw3MC44IDYxIEw3MyA5NCBaIiBmaWxsPSJ1cmwoI2NlbnRlcikiLz4KICA8L2c+CgogIDwhLS0gYWlycGxhbmUgdG9wIHZpZXcgLS0+CiAgPGcgZmlsdGVyPSJ1cmwoI2dsb3cpIj4KICAgIDxwYXRoIGQ9Ik03MCA3CiAgICAgICAgICAgICBDNzQgMTIgNzYgMjIgNzYgMzMKICAgICAgICAgICAgIEw3NyA0MwogICAgICAgICAgICAgTDExMyA1NQogICAgICAgICAgICAgQzExNyA1NyAxMTcgNjEgMTEyIDYyCiAgICAgICAgICAgICBMNzggNTgKICAgICAgICAgICAgIEw3NyA3MAogICAgICAgICAgICAgTDkxIDgxCiAgICAgICAgICAgICBDOTQgODMgOTMgODYgODkgODYKICAgICAgICAgICAgIEw3MyA4MAogICAgICAgICAgICAgTDcxIDkyCiAgICAgICAgICAgICBMNjkgOTIKICAgICAgICAgICAgIEw2NyA4MAogICAgICAgICAgICAgTDUxIDg2CiAgICAgICAgICAgICBDNDcgODYgNDYgODMgNDkgODEKICAgICAgICAgICAgIEw2MyA3MAogICAgICAgICAgICAgTDYyIDU4CiAgICAgICAgICAgICBMMjggNjIKICAgICAgICAgICAgIEMyMyA2MSAyMyA1NyAyNyA1NQogICAgICAgICAgICAgTDYzIDQzCiAgICAgICAgICAgICBMNjQgMzMKICAgICAgICAgICAgIEM2NCAyMiA2NiAxMiA3MCA3IFoiCiAgICAgICAgICBmaWxsPSJ1cmwoI3BsYW5lKSIKICAgICAgICAgIHN0cm9rZT0iI2Q5ZmJmZiIKICAgICAgICAgIHN0cm9rZS13aWR0aD0iMS41IgogICAgICAgICAgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgogICAgPHBhdGggZD0iTTcwIDggTDcwIDg2IiBzdHJva2U9IiM0ZmRjZmYiIHN0cm9rZS13aWR0aD0iMS4yIiBvcGFjaXR5PSIuNTUiLz4KICAgIDxwYXRoIGQ9Ik0zMSA1NyBMNjIgNDggTTEwOSA1NyBMNzggNDgiIHN0cm9rZT0iIzVmZTdmZiIgc3Ryb2tlLXdpZHRoPSIxLjIiIG9wYWNpdHk9Ii40NSIvPgogIDwvZz4KPC9zdmc+") center / contain no-repeat !important;
+            box-shadow: none !important;
+            filter:
+                drop-shadow(0 0 6px rgba(82, 232, 255, 0.64))
+                drop-shadow(0 0 15px rgba(46, 154, 255, 0.26));
+        }
+
+        @media (max-width: 360px) {
+            .reference-main-hero {
+                margin-bottom: -20px !important;
+            }
+
+            #main-menu .flight-primary .btn-play::before {
+                left: 8px !important;
+                width: 76px !important;
             }
         }
 

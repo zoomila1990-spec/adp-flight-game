@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.3.2: Transparent trophy + optimized embedded assets -->
+    <!-- v12.3.3: Clear 5/5 daily ad-limit message -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -6783,8 +6783,8 @@
             if (userData.daily_ads_count >= DAILY_AD_LIMIT) {
                 btnAd.disabled = true;
                 btnAd.innerHTML = adIconButtonMarkup(
-                    "Лимит рекламы",
-                    "5 из 5 просмотров сегодня"
+                    "Лимит на сегодня исчерпан",
+                    "5/5 · Возвращайся завтра"
                 );
                 return false;
             }

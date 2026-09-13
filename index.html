@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.4: Local WebAudio soundscape + custom flight result screen -->
+    <!-- v11.4.1: Clearer rain mix + stronger collision impact -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -3110,6 +3110,7 @@
         let rainSource = null;
         let rainFilter = null;
         let rainGain = null;
+        let rainBodyFilter = null;
 
         let musicTimer = null;
         let musicStep = 0;
@@ -3258,9 +3259,10 @@
             engineOscillator = context.createOscillator();
             engineGain = context.createGain();
 
-            engineOscillator.type = "sine";
-            engineOscillator.frequency.value = 84;
-            engineGain.gain.value = soundEnabled ? 0.030 : 0;
+            // Двигатель — больше низкой тональной основы, меньше шума.
+            engineOscillator.type = "triangle";
+            engineOscillator.frequency.value = 74;
+            engineGain.gain.value = soundEnabled ? 0.022 : 0;
 
             engineOscillator.connect(engineGain);
             engineGain.connect(audioMasterGain);
@@ -3272,11 +3274,11 @@
 
             windFilter = context.createBiquadFilter();
             windFilter.type = "bandpass";
-            windFilter.frequency.value = 820;
-            windFilter.Q.value = 0.55;
+            windFilter.frequency.value = 520;
+            windFilter.Q.value = 0.75;
 
             windGain = context.createGain();
-            windGain.gain.value = soundEnabled ? 0.027 : 0;
+            windGain.gain.value = soundEnabled ? 0.016 : 0;
 
             windSource.connect(windFilter);
             windFilter.connect(windGain);
@@ -3287,15 +3289,24 @@
             rainSource.buffer = audioNoiseBuffer;
             rainSource.loop = true;
 
+            // Дождь уводим вверх по спектру, чтобы он не сливался
+            // с двигателем и ветром. Это более "шуршащий" дождь.
             rainFilter = context.createBiquadFilter();
             rainFilter.type = "highpass";
-            rainFilter.frequency.value = 1350;
+            rainFilter.frequency.value = 2600;
+            rainFilter.Q.value = 0.45;
+
+            rainBodyFilter = context.createBiquadFilter();
+            rainBodyFilter.type = "bandpass";
+            rainBodyFilter.frequency.value = 4200;
+            rainBodyFilter.Q.value = 0.85;
 
             rainGain = context.createGain();
             rainGain.gain.value = 0;
 
             rainSource.connect(rainFilter);
-            rainFilter.connect(rainGain);
+            rainFilter.connect(rainBodyFilter);
+            rainBodyFilter.connect(rainGain);
             rainGain.connect(audioMasterGain);
             rainSource.start();
 
@@ -3353,6 +3364,7 @@
                 windGain = null;
                 rainSource = null;
                 rainFilter = null;
+                rainBodyFilter = null;
                 rainGain = null;
             }, 160);
         }
@@ -3379,53 +3391,61 @@
 
             if (engineOscillator) {
                 const engineHz =
-                    76 +
-                    gameSpeedMultiplier * 15 +
-                    Math.abs(plane.vx) / plane.maxHorizontalSpeed * 8;
+                    68 +
+                    gameSpeedMultiplier * 11 +
+                    Math.abs(plane.vx) / plane.maxHorizontalSpeed * 5;
 
                 engineOscillator.frequency.setTargetAtTime(
                     engineHz,
                     now,
-                    0.08
+                    0.10
                 );
             }
 
             if (engineGain) {
                 engineGain.gain.setTargetAtTime(
                     soundEnabled
-                        ? 0.026 + gameSpeedMultiplier * 0.003
+                        ? 0.019 + gameSpeedMultiplier * 0.0022
                         : 0,
                     now,
-                    0.08
+                    0.10
                 );
             }
 
             if (windGain) {
                 windGain.gain.setTargetAtTime(
                     soundEnabled
-                        ? 0.020 + gameSpeedMultiplier * 0.0045
+                        ? 0.012 + gameSpeedMultiplier * 0.0033
                         : 0,
                     now,
-                    0.08
+                    0.10
                 );
             }
 
             if (windFilter) {
                 windFilter.frequency.setTargetAtTime(
-                    680 + gameSpeedMultiplier * 120,
+                    470 + gameSpeedMultiplier * 70,
                     now,
-                    0.10
+                    0.12
                 );
             }
 
             if (rainGain) {
                 rainGain.gain.setTargetAtTime(
                     soundEnabled
-                        ? weatherRain * 0.055 +
-                          weatherStorm * 0.020
+                        ? weatherRain * 0.078 +
+                          weatherStorm * 0.032
                         : 0,
                     now,
                     0.12
+                );
+            }
+
+            if (rainBodyFilter) {
+                rainBodyFilter.frequency.setTargetAtTime(
+                    3900 + weatherStorm * 900,
+                    now,
+                    0.16
                 );
             }
         }
@@ -3490,10 +3510,10 @@
 
         function playPointSound() {
             playTone({
-                frequency: 760,
-                endFrequency: 980,
-                duration: 0.085,
-                gain: 0.040
+                frequency: 820,
+                endFrequency: 1040,
+                duration: 0.070,
+                gain: 0.027
             });
         }
 
@@ -3528,34 +3548,76 @@
 
             const now = audioContext.currentTime;
 
+            // 1) Низкий "удар" корпуса.
             playTone({
-                frequency: 120,
-                endFrequency: 46,
-                duration: 0.34,
-                gain: 0.075,
+                frequency: 105,
+                endFrequency: 32,
+                duration: 0.42,
+                gain: 0.095,
                 type: "sine"
             });
 
-            const burst = audioContext.createBufferSource();
-            burst.buffer = audioNoiseBuffer;
+            // 2) Короткий металлический щелчок.
+            playTone({
+                frequency: 1450,
+                endFrequency: 310,
+                duration: 0.11,
+                gain: 0.032,
+                type: "square"
+            });
 
-            const filter = audioContext.createBiquadFilter();
-            filter.type = "lowpass";
-            filter.frequency.value = 920;
+            // 3) Основной шум взрыва.
+            const explosion = audioContext.createBufferSource();
+            explosion.buffer = audioNoiseBuffer;
 
-            const gain = audioContext.createGain();
-            gain.gain.setValueAtTime(0.095, now);
-            gain.gain.exponentialRampToValueAtTime(
+            const explosionFilter = audioContext.createBiquadFilter();
+            explosionFilter.type = "lowpass";
+            explosionFilter.frequency.setValueAtTime(1800, now);
+            explosionFilter.frequency.exponentialRampToValueAtTime(
+                260,
+                now + 0.46
+            );
+
+            const explosionGain = audioContext.createGain();
+            explosionGain.gain.setValueAtTime(0.0001, now);
+            explosionGain.gain.exponentialRampToValueAtTime(
+                0.145,
+                now + 0.012
+            );
+            explosionGain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                now + 0.48
+            );
+
+            explosion.connect(explosionFilter);
+            explosionFilter.connect(explosionGain);
+            explosionGain.connect(audioMasterGain);
+
+            explosion.start(now);
+            explosion.stop(now + 0.50);
+
+            // 4) Короткий "хвост" после удара.
+            const debris = audioContext.createBufferSource();
+            debris.buffer = audioNoiseBuffer;
+
+            const debrisFilter = audioContext.createBiquadFilter();
+            debrisFilter.type = "bandpass";
+            debrisFilter.frequency.value = 2300;
+            debrisFilter.Q.value = 0.7;
+
+            const debrisGain = audioContext.createGain();
+            debrisGain.gain.setValueAtTime(0.050, now + 0.06);
+            debrisGain.gain.exponentialRampToValueAtTime(
                 0.0001,
                 now + 0.30
             );
 
-            burst.connect(filter);
-            filter.connect(gain);
-            gain.connect(audioMasterGain);
+            debris.connect(debrisFilter);
+            debrisFilter.connect(debrisGain);
+            debrisGain.connect(audioMasterGain);
 
-            burst.start(now);
-            burst.stop(now + 0.32);
+            debris.start(now + 0.05);
+            debris.stop(now + 0.32);
         }
 
         function playThunderSound() {

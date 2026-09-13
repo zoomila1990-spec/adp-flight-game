@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.3.1: Stable background scroll + Canvas performance optimization -->
+    <!-- v11.4: Local WebAudio soundscape + custom flight result screen -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1897,6 +1897,200 @@
             letter-spacing: 0.06em;
         }
 
+
+        .game-flight-actions {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .game-sound-btn {
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            border: 1px solid rgba(150, 210, 240, 0.12);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.035);
+            color: #d7eef8;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 140ms ease, background 140ms ease;
+        }
+
+        .game-sound-btn:active {
+            transform: scale(0.94);
+        }
+
+        .flight-result-modal {
+            z-index: 360;
+            background:
+                radial-gradient(circle at 50% 20%, rgba(52, 226, 255, 0.11), transparent 34%),
+                rgba(2, 8, 15, 0.90);
+            backdrop-filter: blur(12px);
+        }
+
+        .flight-result-card {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 26px;
+            padding: 22px 18px 18px;
+            background:
+                radial-gradient(circle at 90% 0%, rgba(69,245,206,0.11), transparent 32%),
+                linear-gradient(155deg, rgba(14, 31, 50, 0.98), rgba(7, 17, 29, 0.98));
+            border: 1px solid rgba(103, 213, 255, 0.14);
+            box-shadow:
+                0 26px 65px rgba(0,0,0,0.48),
+                0 0 40px rgba(56,232,255,0.06);
+        }
+
+        .flight-result-card::after {
+            content: "✈";
+            position: absolute;
+            right: -2px;
+            top: -28px;
+            font-size: 112px;
+            color: rgba(255,255,255,0.025);
+            transform: rotate(-13deg);
+            pointer-events: none;
+        }
+
+        .result-icon {
+            width: 54px;
+            height: 54px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            font-size: 25px;
+            color: #04131a;
+            background: linear-gradient(145deg, #efffff, #66f1db 56%, #65d2ff);
+            box-shadow: 0 10px 28px rgba(62,232,207,0.19);
+        }
+
+        .result-title {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: #f4fbff;
+            font-size: 19px;
+            font-weight: 950;
+            margin-bottom: 4px;
+        }
+
+        .result-subtitle {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 10px;
+            line-height: 1.45;
+            margin-bottom: 15px;
+        }
+
+        .result-earned {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            color: #63f5d8;
+            font-size: 38px;
+            line-height: 1;
+            font-weight: 950;
+            letter-spacing: -0.045em;
+            margin: 5px 0 16px;
+            text-shadow: 0 0 22px rgba(99,245,216,0.16);
+        }
+
+        .result-stats {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .result-stat {
+            min-width: 0;
+            padding: 10px 11px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.035);
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .result-stat-label {
+            display: block;
+            color: #7890a6;
+            font-size: 7.5px;
+            font-weight: 850;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .result-stat-value {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: #f3f9fd;
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .result-save-status {
+            position: relative;
+            z-index: 1;
+            min-height: 33px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            padding: 9px 10px;
+            color: #8ea7bd;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid rgba(255,255,255,0.04);
+            font-size: 9.5px;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .result-save-status.success {
+            color: #b9fff1;
+            border-color: rgba(69,245,206,0.13);
+            background: rgba(69,245,206,0.045);
+        }
+
+        .result-save-status.error {
+            color: #ffd1d1;
+            border-color: rgba(255,112,112,0.16);
+            background: rgba(255,112,112,0.045);
+        }
+
+        .result-actions {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 8px;
+        }
+
+        .result-actions .btn {
+            min-height: 50px;
+            border-radius: 15px;
+            font-size: 11.5px;
+            padding: 12px 10px;
+        }
+
+        .result-actions .btn:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
         .game-flight-status-dot {
             width: 6px;
             height: 6px;
@@ -2699,6 +2893,79 @@
     <!-- =========================================================
          ИГРОВОЙ ЭКРАН
          ========================================================= -->
+    <!-- =========================================================
+         РЕЗУЛЬТАТ ПОЛЁТА
+         ========================================================= -->
+    <div class="modal flight-result-modal" id="modal-flight-result">
+        <div class="flight-result-card">
+            <div class="result-icon">✈</div>
+
+            <div class="result-title" id="flight-result-title">
+                Полёт завершён
+            </div>
+
+            <div class="result-subtitle" id="flight-result-subtitle">
+                Результат отправляется на сервер…
+            </div>
+
+            <div class="result-earned" id="flight-result-earned">
+                +0 ADP
+            </div>
+
+            <div class="result-stats">
+                <div class="result-stat">
+                    <span class="result-stat-label">Недельный баланс</span>
+                    <span class="result-stat-value" id="flight-result-total">
+                        —
+                    </span>
+                </div>
+
+                <div class="result-stat">
+                    <span class="result-stat-label">Макс. сложность</span>
+                    <span class="result-stat-value" id="flight-result-difficulty">
+                        —
+                    </span>
+                </div>
+
+                <div class="result-stat">
+                    <span class="result-stat-label">Погода</span>
+                    <span class="result-stat-value" id="flight-result-weather">
+                        —
+                    </span>
+                </div>
+
+                <div class="result-stat">
+                    <span class="result-stat-label">Осталось попыток</span>
+                    <span class="result-stat-value" id="flight-result-attempts">
+                        —
+                    </span>
+                </div>
+            </div>
+
+            <div class="result-save-status" id="flight-result-save-status">
+                Сохраняем результат…
+            </div>
+
+            <div class="result-actions">
+                <button
+                    class="btn btn-play"
+                    id="flight-result-replay"
+                    onclick="replayFlight()"
+                    disabled
+                >
+                    ✈️ Ещё один полёт
+                </button>
+
+                <button
+                    class="btn btn-secondary"
+                    onclick="goToMainMenuFromResult()"
+                >
+                    На главную
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="game-screen">
         <div class="game-shell">
             <div class="game-flight-bar">
@@ -2707,14 +2974,23 @@
                     <span>Полёт</span>
                 </div>
 
-                <div class="game-flight-status">
-                    <span
-                        class="game-flight-status-dot weather-clear"
-                        id="game-weather-dot"
-                    ></span>
-                    <span class="game-weather-status" id="game-weather-status">
-                        ЯСНО
-                    </span>
+                <div class="game-flight-actions">
+                    <div class="game-flight-status">
+                        <span
+                            class="game-flight-status-dot weather-clear"
+                            id="game-weather-dot"
+                        ></span>
+                        <span class="game-weather-status" id="game-weather-status">
+                            ЯСНО
+                        </span>
+                    </div>
+
+                    <button
+                        class="game-sound-btn"
+                        id="game-sound-btn"
+                        onclick="toggleGameSound(event)"
+                        aria-label="Включить или выключить звук"
+                    >🔊</button>
                 </div>
             </div>
 
@@ -2810,6 +3086,582 @@
                 tg?.HapticFeedback?.impactOccurred(type);
             } catch (error) {
                 // Виброотклик не критичен для работы приложения.
+            }
+        }
+
+        /* =========================================================
+           ЛОКАЛЬНЫЙ ЗВУК / WEB AUDIO
+           Всё воспроизводится на устройстве пользователя.
+           Сервер и FastAPI в аудио не участвуют.
+           ========================================================= */
+
+        let audioContext = null;
+        let audioMasterGain = null;
+
+        let audioNoiseBuffer = null;
+
+        let engineOscillator = null;
+        let engineGain = null;
+
+        let windSource = null;
+        let windFilter = null;
+        let windGain = null;
+
+        let rainSource = null;
+        let rainFilter = null;
+        let rainGain = null;
+
+        let musicTimer = null;
+        let musicStep = 0;
+
+        let audioParamTimer = 0;
+        let soundEnabled = true;
+        let flightAudioRunning = false;
+
+        try {
+            const savedSound = localStorage.getItem("adp_sound_enabled");
+            if (savedSound === "0") {
+                soundEnabled = false;
+            }
+        } catch (error) {
+            // localStorage не критичен.
+        }
+
+        function updateSoundButton() {
+            const button = document.getElementById("game-sound-btn");
+            if (!button) return;
+
+            button.textContent = soundEnabled ? "🔊" : "🔇";
+            button.setAttribute(
+                "aria-label",
+                soundEnabled
+                    ? "Выключить звук"
+                    : "Включить звук"
+            );
+        }
+
+        function ensureAudioContext() {
+            if (audioContext) {
+                return audioContext;
+            }
+
+            const AudioContextClass =
+                window.AudioContext ||
+                window.webkitAudioContext;
+
+            if (!AudioContextClass) {
+                return null;
+            }
+
+            audioContext = new AudioContextClass();
+
+            audioMasterGain = audioContext.createGain();
+            audioMasterGain.gain.value = soundEnabled ? 0.70 : 0;
+            audioMasterGain.connect(audioContext.destination);
+
+            audioNoiseBuffer = createNoiseBuffer(
+                audioContext,
+                2.0
+            );
+
+            return audioContext;
+        }
+
+        function createNoiseBuffer(context, seconds) {
+            const frameCount = Math.max(
+                1,
+                Math.floor(context.sampleRate * seconds)
+            );
+
+            const buffer = context.createBuffer(
+                1,
+                frameCount,
+                context.sampleRate
+            );
+
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < frameCount; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+
+            return buffer;
+        }
+
+        function unlockAudio() {
+            const context = ensureAudioContext();
+
+            if (!context) {
+                return;
+            }
+
+            if (context.state === "suspended") {
+                context.resume().catch(() => {});
+            }
+
+            updateSoundButton();
+        }
+
+        function toggleGameSound(event) {
+            event?.stopPropagation?.();
+
+            soundEnabled = !soundEnabled;
+
+            try {
+                localStorage.setItem(
+                    "adp_sound_enabled",
+                    soundEnabled ? "1" : "0"
+                );
+            } catch (error) {
+                // Настройка всё равно действует до перезагрузки.
+            }
+
+            unlockAudio();
+
+            if (audioMasterGain && audioContext) {
+                audioMasterGain.gain.cancelScheduledValues(
+                    audioContext.currentTime
+                );
+
+                audioMasterGain.gain.setTargetAtTime(
+                    soundEnabled ? 0.70 : 0,
+                    audioContext.currentTime,
+                    0.04
+                );
+            }
+
+            updateSoundButton();
+
+            if (soundEnabled && isPlaying) {
+                startFlightAudio();
+                playUiTone();
+            }
+        }
+
+        function startFlightAudio() {
+            const context = ensureAudioContext();
+
+            if (
+                !context ||
+                flightAudioRunning
+            ) {
+                return;
+            }
+
+            flightAudioRunning = true;
+            audioParamTimer = 0;
+
+            if (context.state === "suspended") {
+                context.resume().catch(() => {});
+            }
+
+            engineOscillator = context.createOscillator();
+            engineGain = context.createGain();
+
+            engineOscillator.type = "sine";
+            engineOscillator.frequency.value = 84;
+            engineGain.gain.value = soundEnabled ? 0.030 : 0;
+
+            engineOscillator.connect(engineGain);
+            engineGain.connect(audioMasterGain);
+            engineOscillator.start();
+
+            windSource = context.createBufferSource();
+            windSource.buffer = audioNoiseBuffer;
+            windSource.loop = true;
+
+            windFilter = context.createBiquadFilter();
+            windFilter.type = "bandpass";
+            windFilter.frequency.value = 820;
+            windFilter.Q.value = 0.55;
+
+            windGain = context.createGain();
+            windGain.gain.value = soundEnabled ? 0.027 : 0;
+
+            windSource.connect(windFilter);
+            windFilter.connect(windGain);
+            windGain.connect(audioMasterGain);
+            windSource.start();
+
+            rainSource = context.createBufferSource();
+            rainSource.buffer = audioNoiseBuffer;
+            rainSource.loop = true;
+
+            rainFilter = context.createBiquadFilter();
+            rainFilter.type = "highpass";
+            rainFilter.frequency.value = 1350;
+
+            rainGain = context.createGain();
+            rainGain.gain.value = 0;
+
+            rainSource.connect(rainFilter);
+            rainFilter.connect(rainGain);
+            rainGain.connect(audioMasterGain);
+            rainSource.start();
+
+            startMusicLoop();
+        }
+
+        function stopFlightAudio() {
+            flightAudioRunning = false;
+
+            stopMusicLoop();
+
+            const context = audioContext;
+            if (!context) {
+                return;
+            }
+
+            const now = context.currentTime;
+
+            for (const gainNode of [
+                engineGain,
+                windGain,
+                rainGain
+            ]) {
+                if (!gainNode) continue;
+
+                try {
+                    gainNode.gain.cancelScheduledValues(now);
+                    gainNode.gain.setTargetAtTime(
+                        0,
+                        now,
+                        0.035
+                    );
+                } catch (error) {
+                    // Некритично.
+                }
+            }
+
+            setTimeout(() => {
+                for (const source of [
+                    engineOscillator,
+                    windSource,
+                    rainSource
+                ]) {
+                    try {
+                        source?.stop?.();
+                    } catch (error) {
+                        // Источник уже мог остановиться.
+                    }
+                }
+
+                engineOscillator = null;
+                engineGain = null;
+                windSource = null;
+                windFilter = null;
+                windGain = null;
+                rainSource = null;
+                rainFilter = null;
+                rainGain = null;
+            }, 160);
+        }
+
+        function updateFlightAudio(deltaSeconds) {
+            if (
+                !flightAudioRunning ||
+                !audioContext
+            ) {
+                return;
+            }
+
+            audioParamTimer += deltaSeconds;
+
+            // Параметры WebAudio обновляем примерно 10 раз/сек,
+            // а не на каждом кадре.
+            if (audioParamTimer < 0.10) {
+                return;
+            }
+
+            audioParamTimer = 0;
+
+            const now = audioContext.currentTime;
+
+            if (engineOscillator) {
+                const engineHz =
+                    76 +
+                    gameSpeedMultiplier * 15 +
+                    Math.abs(plane.vx) / plane.maxHorizontalSpeed * 8;
+
+                engineOscillator.frequency.setTargetAtTime(
+                    engineHz,
+                    now,
+                    0.08
+                );
+            }
+
+            if (engineGain) {
+                engineGain.gain.setTargetAtTime(
+                    soundEnabled
+                        ? 0.026 + gameSpeedMultiplier * 0.003
+                        : 0,
+                    now,
+                    0.08
+                );
+            }
+
+            if (windGain) {
+                windGain.gain.setTargetAtTime(
+                    soundEnabled
+                        ? 0.020 + gameSpeedMultiplier * 0.0045
+                        : 0,
+                    now,
+                    0.08
+                );
+            }
+
+            if (windFilter) {
+                windFilter.frequency.setTargetAtTime(
+                    680 + gameSpeedMultiplier * 120,
+                    now,
+                    0.10
+                );
+            }
+
+            if (rainGain) {
+                rainGain.gain.setTargetAtTime(
+                    soundEnabled
+                        ? weatherRain * 0.055 +
+                          weatherStorm * 0.020
+                        : 0,
+                    now,
+                    0.12
+                );
+            }
+        }
+
+        function playTone({
+            frequency = 440,
+            duration = 0.12,
+            gain = 0.05,
+            type = "sine",
+            endFrequency = null
+        } = {}) {
+            if (
+                !soundEnabled ||
+                !audioContext ||
+                !audioMasterGain
+            ) {
+                return;
+            }
+
+            const now = audioContext.currentTime;
+            const oscillator = audioContext.createOscillator();
+            const noteGain = audioContext.createGain();
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(
+                frequency,
+                now
+            );
+
+            if (endFrequency) {
+                oscillator.frequency.exponentialRampToValueAtTime(
+                    Math.max(20, endFrequency),
+                    now + duration
+                );
+            }
+
+            noteGain.gain.setValueAtTime(0.0001, now);
+            noteGain.gain.exponentialRampToValueAtTime(
+                gain,
+                now + 0.012
+            );
+            noteGain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                now + duration
+            );
+
+            oscillator.connect(noteGain);
+            noteGain.connect(audioMasterGain);
+
+            oscillator.start(now);
+            oscillator.stop(now + duration + 0.02);
+        }
+
+        function playUiTone() {
+            playTone({
+                frequency: 520,
+                endFrequency: 690,
+                duration: 0.10,
+                gain: 0.032
+            });
+        }
+
+        function playPointSound() {
+            playTone({
+                frequency: 760,
+                endFrequency: 980,
+                duration: 0.085,
+                gain: 0.040
+            });
+        }
+
+        function playResultSound() {
+            if (!soundEnabled || !audioContext) {
+                return;
+            }
+
+            playTone({
+                frequency: 523.25,
+                duration: 0.16,
+                gain: 0.035
+            });
+
+            setTimeout(() => {
+                playTone({
+                    frequency: 659.25,
+                    duration: 0.19,
+                    gain: 0.036
+                });
+            }, 105);
+        }
+
+        function playCollisionSound() {
+            if (
+                !soundEnabled ||
+                !audioContext ||
+                !audioMasterGain
+            ) {
+                return;
+            }
+
+            const now = audioContext.currentTime;
+
+            playTone({
+                frequency: 120,
+                endFrequency: 46,
+                duration: 0.34,
+                gain: 0.075,
+                type: "sine"
+            });
+
+            const burst = audioContext.createBufferSource();
+            burst.buffer = audioNoiseBuffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.value = 920;
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.095, now);
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                now + 0.30
+            );
+
+            burst.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioMasterGain);
+
+            burst.start(now);
+            burst.stop(now + 0.32);
+        }
+
+        function playThunderSound() {
+            if (
+                !soundEnabled ||
+                !audioContext ||
+                !audioMasterGain
+            ) {
+                return;
+            }
+
+            const now = audioContext.currentTime;
+
+            const burst = audioContext.createBufferSource();
+            burst.buffer = audioNoiseBuffer;
+
+            const filter = audioContext.createBiquadFilter();
+            filter.type = "lowpass";
+            filter.frequency.value = 430;
+
+            const gain = audioContext.createGain();
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(
+                0.085,
+                now + 0.025
+            );
+            gain.gain.exponentialRampToValueAtTime(
+                0.0001,
+                now + 0.72
+            );
+
+            burst.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioMasterGain);
+
+            burst.start(now);
+            burst.stop(now + 0.74);
+
+            playTone({
+                frequency: 62,
+                endFrequency: 38,
+                duration: 0.64,
+                gain: 0.040
+            });
+        }
+
+        function startMusicLoop() {
+            stopMusicLoop();
+
+            if (
+                !soundEnabled ||
+                !audioContext
+            ) {
+                return;
+            }
+
+            musicStep = 0;
+
+            const melody = [
+                261.63,
+                329.63,
+                392.00,
+                329.63,
+                293.66,
+                349.23,
+                440.00,
+                349.23
+            ];
+
+            const playNext = () => {
+                if (
+                    !flightAudioRunning ||
+                    !soundEnabled
+                ) {
+                    return;
+                }
+
+                const note = melody[
+                    musicStep % melody.length
+                ];
+
+                playTone({
+                    frequency: note,
+                    duration: 0.52,
+                    gain: 0.010,
+                    type: "sine"
+                });
+
+                musicStep += 1;
+
+                musicTimer = setTimeout(
+                    playNext,
+                    980
+                );
+            };
+
+            musicTimer = setTimeout(
+                playNext,
+                360
+            );
+        }
+
+        function stopMusicLoop() {
+            if (musicTimer) {
+                clearTimeout(musicTimer);
+                musicTimer = null;
             }
         }
 
@@ -4524,6 +5376,7 @@
             document.getElementById("modal-referral").style.display = "none";
             document.getElementById("modal-community").style.display = "none";
             document.getElementById("modal-context-help").style.display = "none";
+            document.getElementById("modal-flight-result").style.display = "none";
         }
 
         /* =========================================================
@@ -5201,6 +6054,10 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         }
 
         async function startGame() {
+            // Вызвано непосредственно пользовательским нажатием:
+            // это правильный момент для разблокировки WebAudio на iOS/Telegram.
+            unlockAudio();
+
             if (gameStartInProgress) {
                 return;
             }
@@ -5311,6 +6168,10 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             isPlaying = true;
             lastFrameTime = performance.now();
+
+            updateSoundButton();
+            startFlightAudio();
+
             animationFrameId = requestAnimationFrame(gameLoop);
         }
 
@@ -5366,6 +6227,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             updateWeather(deltaSeconds);
             updateScorePopups(deltaSeconds);
+            updateFlightAudio(deltaSeconds);
 
             // Запоминаем максимальную сложность, достигнутую за этот полёт.
             maxSpeedMultiplierReached = Math.max(
@@ -5449,6 +6311,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                     document.getElementById("current-game-score").innerText = String(score);
 
                     addScorePopup();
+                    playPointSound();
 
                     // Во время полёта не вызываем HapticFeedback за +1 ADP.
                     // В Telegram WebView системный haptic может прервать плавность кадра.
@@ -5558,6 +6421,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 if (lightningTimer <= 0) {
                     lightningFlash = randomBetween(0.34, 0.62);
                     lightningTimer = randomBetween(4.2, 8.0);
+                    playThunderSound();
                 }
             } else if (lightningTimer < 3.5) {
                 lightningTimer = 4.5;
@@ -5631,6 +6495,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             crashTimer = 0.28;
             crashFlash = 0.72;
             haptic("heavy");
+            playCollisionSound();
 
             const cx = plane.x + plane.width / 2;
             const cy = plane.y + plane.height / 2;
@@ -6352,6 +7217,173 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             ctx.restore();
         }
 
+        function openFlightResultPending({
+            earnedAdp,
+            difficulty,
+            weather
+        }) {
+            const modal = document.getElementById(
+                "modal-flight-result"
+            );
+
+            const status = document.getElementById(
+                "flight-result-save-status"
+            );
+
+            document.getElementById(
+                "flight-result-title"
+            ).textContent = "Полёт завершён";
+
+            document.getElementById(
+                "flight-result-subtitle"
+            ).textContent =
+                "Фиксируем результат и обновляем недельный рейтинг.";
+
+            document.getElementById(
+                "flight-result-earned"
+            ).textContent =
+                `+${Number(earnedAdp || 0)} ADP`;
+
+            document.getElementById(
+                "flight-result-total"
+            ).textContent = "…";
+
+            document.getElementById(
+                "flight-result-difficulty"
+            ).textContent =
+                `x${Number(difficulty || 1).toFixed(1)}`;
+
+            document.getElementById(
+                "flight-result-weather"
+            ).textContent =
+                weather || "ЯСНО";
+
+            document.getElementById(
+                "flight-result-attempts"
+            ).textContent = "…";
+
+            status.className = "result-save-status";
+            status.textContent = "Сохраняем результат…";
+
+            const replayButton = document.getElementById(
+                "flight-result-replay"
+            );
+
+            replayButton.disabled = true;
+
+            modal.style.display = "flex";
+        }
+
+        function updateFlightResultSuccess(data) {
+            const earned = Number(
+                data.earned_adp ?? score
+            );
+
+            document.getElementById(
+                "flight-result-earned"
+            ).textContent =
+                `+${earned} ADP`;
+
+            document.getElementById(
+                "flight-result-total"
+            ).textContent =
+                `${Number(userData.weekly_score || 0)} ADP`;
+
+            document.getElementById(
+                "flight-result-attempts"
+            ).textContent =
+                String(Number(userData.game_attempts || 0));
+
+            const status = document.getElementById(
+                "flight-result-save-status"
+            );
+
+            status.className =
+                "result-save-status success";
+
+            status.textContent =
+                "✅ Результат подтверждён сервером и добавлен в недельный рейтинг.";
+
+            const replayButton = document.getElementById(
+                "flight-result-replay"
+            );
+
+            replayButton.disabled =
+                Number(userData.game_attempts || 0) <= 0;
+
+            if (replayButton.disabled) {
+                replayButton.textContent =
+                    "Нет попыток";
+            } else {
+                replayButton.textContent =
+                    "✈️ Ещё один полёт";
+            }
+
+            playResultSound();
+        }
+
+        function updateFlightResultError(message) {
+            const status = document.getElementById(
+                "flight-result-save-status"
+            );
+
+            status.className =
+                "result-save-status error";
+
+            status.textContent =
+                message ||
+                "Результат не удалось подтвердить сервером.";
+
+            const replayButton = document.getElementById(
+                "flight-result-replay"
+            );
+
+            replayButton.disabled = true;
+            replayButton.textContent =
+                "Повтор недоступен";
+        }
+
+        function closeFlightResult() {
+            document.getElementById(
+                "modal-flight-result"
+            ).style.display = "none";
+        }
+
+        function goToMainMenuFromResult() {
+            closeFlightResult();
+
+            document.getElementById(
+                "game-screen"
+            ).style.display = "none";
+
+            document.getElementById(
+                "main-menu"
+            ).style.display = "flex";
+
+            updateUI();
+        }
+
+        async function replayFlight() {
+            if (
+                Number(userData.game_attempts || 0) <= 0
+            ) {
+                showAlert(
+                    "Попытки закончились. Получите новую попытку через рекламу."
+                );
+                goToMainMenuFromResult();
+                return;
+            }
+
+            closeFlightResult();
+
+            document.getElementById(
+                "main-menu"
+            ).style.display = "flex";
+
+            await startGame();
+        }
+
+
         async function finishGame(reason) {
             if (!isPlaying) {
                 return;
@@ -6364,79 +7396,122 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 animationFrameId = null;
             }
 
+            stopFlightAudio();
+
             if (reason !== "collision") {
                 haptic("heavy");
             }
 
-            document.getElementById("game-screen").style.display = "none";
-            document.getElementById("main-menu").style.display = "flex";
+            document.getElementById(
+                "game-screen"
+            ).style.display = "none";
+
+            document.getElementById(
+                "main-menu"
+            ).style.display = "none";
 
             const sessionId = activeGameSessionId;
 
-            // Замораживаем телеметрию до сетевого запроса, чтобы время HTTP-запроса
-            // не попадало в продолжительность самого полёта.
+            // Замораживаем телеметрию до сетевого запроса.
             const flightDurationMs = Math.max(
                 1,
-                Math.round(performance.now() - flightStartedAtMs)
+                Math.round(
+                    performance.now() -
+                    flightStartedAtMs
+                )
             );
-            const finalFrameCount = Math.max(1, frameCount);
+
+            const finalFrameCount = Math.max(
+                1,
+                frameCount
+            );
+
             const finalMaxSpeedMultiplier = Math.max(
                 1,
                 maxSpeedMultiplierReached
             );
 
+            const finalWeather = weatherName || "ЯСНО";
+
+            openFlightResultPending({
+                earnedAdp: score,
+                difficulty: finalMaxSpeedMultiplier,
+                weather: finalWeather
+            });
+
             if (!sessionId) {
-                showAlert("Не найдена игровая сессия. Результат не будет начислен.");
+                updateFlightResultError(
+                    "Игровая сессия не найдена. Результат не был начислен."
+                );
+
                 await syncUser();
                 return;
             }
 
             try {
-                const response = await fetch(`${API_URL}/api/user/finish-game`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        init_data: telegramInitData,
-                        score: score,
-                        session_id: sessionId,
-                        flight_duration_ms: flightDurationMs,
-                        frame_count: finalFrameCount,
-                        max_speed_multiplier: Number(finalMaxSpeedMultiplier.toFixed(3)),
-                        finish_reason: reason
-                    })
-                });
+                const response = await fetch(
+                    `${API_URL}/api/user/finish-game`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            init_data: telegramInitData,
+                            score: score,
+                            session_id: sessionId,
+                            flight_duration_ms: flightDurationMs,
+                            frame_count: finalFrameCount,
+                            max_speed_multiplier: Number(
+                                finalMaxSpeedMultiplier.toFixed(3)
+                            ),
+                            finish_reason: reason
+                        })
+                    }
+                );
 
                 const data = await response.json();
 
                 if (!response.ok) {
-                    showAlert(data.detail || "Telegram-авторизация не прошла проверку.");
-                    return;
+                    throw new Error(
+                        data.detail ||
+                        "Сервер не подтвердил результат."
+                    );
                 }
 
-                // Эта сессия больше не должна использоваться повторно.
                 activeGameSessionId = null;
 
                 if (data.success) {
-                    userData.weekly_score = Number(data.weekly_score || 0);
-                    userData.game_attempts = Number(data.game_attempts || 0);
-                    updateUI();
+                    userData.weekly_score = Number(
+                        data.weekly_score || 0
+                    );
 
-                    if (reason === "collision") {
-                        showAlert(`Полет завершен!\nЗаработано: ${Number(data.earned_adp ?? score)} ADP.`);
-                    }
+                    userData.game_attempts = Number(
+                        data.game_attempts || 0
+                    );
+
+                    updateUI();
+                    updateFlightResultSuccess(data);
                 } else {
                     await syncUser();
-                    showAlert(data.reason || "Результат полета не прошёл проверку сервера.");
-                }
-            } catch (error) {
-                console.error("Ошибка сохранения полета:", error);
 
-                // Сессия остаётся на сервере active и позже будет очищена автоматически.
-                // Баланс синхронизируем, чтобы интерфейс не показывал неверные данные.
+                    updateFlightResultError(
+                        data.reason ||
+                        "Результат полёта не прошёл проверку сервера."
+                    );
+                }
+
+            } catch (error) {
+                console.error(
+                    "Ошибка сохранения полета:",
+                    error
+                );
+
                 await syncUser();
-                showAlert(`Полет завершен. Счет: ${score}. Сервер не сохранил результат.`);
+
+                updateFlightResultError(
+                    "Полёт завершён, но сервер пока не подтвердил результат. Вернитесь на главную и проверьте баланс."
+                );
             }
         }
 
@@ -6448,6 +7523,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         // Затем TON Connect восстанавливает свою сессию.
         // Так автovосстановление кошелька не вызывает повторное сообщение при каждом входе.
         (async function startApp() {
+            updateSoundButton();
             await syncUser();
             await loadWeeklySummary();
             initTonConnect();

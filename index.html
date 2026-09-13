@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.7: AdsGram server-confirmed reward flow -->
+    <!-- v12.8: AdsGram instant reward + server audit -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -6083,7 +6083,7 @@
                         <span class="bonus-icon-row">
                             <span class="adp-aviation-icon adp-icon-ad"></span>
                             <span class="adp-button-copy">
-                                <span class="adp-button-title">Тестовая реклама</span>
+                                <span class="adp-button-title">Реклама за награду</span>
                                 <span class="adp-button-reward">+50 ADP · +1 полёт</span>
                             </span>
                         </span>
@@ -6963,8 +6963,8 @@
         // Перед реальным запуском после настройки Reward URL меняем на false.
         const ADSGRAM_DEBUG = false;
 
-        // В production награду начисляет ТОЛЬКО server postback AdsGram.
-        const ADSGRAM_SERVER_CONFIRM_TIMEOUT_MS = 30000;
+        // Награда начисляется сразу после успешного AdsGram show().
+        // Reward URL работает параллельно как server-side audit/fallback.
 
         const TONCONNECT_MANIFEST_URL =
             "https://zoomila1990-spec.github.io/adp-flight-game/tonconnect-manifest.json";
@@ -8322,7 +8322,9 @@
             if (userData.is_admin) {
                 btnAd.disabled = false;
                 btnAd.innerHTML = adIconButtonMarkup(
-                    "Тестовая реклама",
+                    ADSGRAM_DEBUG
+                        ? "Тестовая реклама"
+                        : "Реклама за награду",
                     "+50 ADP · +1 полёт"
                 );
                 return false;
@@ -8386,37 +8388,9 @@
             }, 1000);
         }
 
-        async function grantAdRewardOnServer() {
-            const response = await fetch(`${API_URL}/api/user/watch-ad`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    init_data: telegramInitData
-                })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(
-                    data.detail || "Telegram-авторизация не прошла проверку."
-                );
-            }
-
-            if (!data.success) {
-                throw new Error(
-                    data.reason || "Сервер не подтвердил рекламную награду."
-                );
-            }
-
-            return data;
-        }
-
-        async function fetchAdRewardStatus() {
+        async function grantDebugAdRewardOnServer() {
             const response = await fetch(
-                `${API_URL}/api/user/ad-reward-status`,
+                `${API_URL}/api/user/watch-ad`,
                 {
                     method: "POST",
                     headers: {
@@ -8433,41 +8407,67 @@
             if (!response.ok || !data.success) {
                 throw new Error(
                     data.detail ||
-                    "Не удалось проверить рекламную награду."
+                    data.reason ||
+                    "Не удалось начислить тестовую награду."
                 );
             }
 
             return data;
         }
 
-        async function waitForAdsgramServerReward(before) {
-            const startedAt = Date.now();
-
-            while (
-                Date.now() - startedAt
-                < ADSGRAM_SERVER_CONFIRM_TIMEOUT_MS
-            ) {
-                const status =
-                    await fetchAdRewardStatus();
-
-                const changed =
-                    Number(status.daily_ads_count || 0)
-                        > Number(before.daily_ads_count || 0)
-                    || Number(status.game_attempts || 0)
-                        > Number(before.game_attempts || 0)
-                    || Number(status.weekly_score || 0)
-                        > Number(before.weekly_score || 0);
-
-                if (changed) {
-                    return status;
+        async function startAdRewardSession() {
+            const response = await fetch(
+                `${API_URL}/api/user/ad-session/start`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
                 }
+            );
 
-                await new Promise(
-                    resolve => setTimeout(resolve, 1000)
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.detail ||
+                    data.reason ||
+                    "Сейчас реклама недоступна."
                 );
             }
 
-            return null;
+            return data;
+        }
+
+        async function completeAdRewardSession(sessionId) {
+            const response = await fetch(
+                `${API_URL}/api/user/ad-session/complete`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData,
+                        session_id: sessionId
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.detail ||
+                    data.reason ||
+                    "Не удалось начислить рекламную награду."
+                );
+            }
+
+            return data;
         }
 
         async function watchAd() {
@@ -8477,58 +8477,64 @@
 
             haptic("light");
 
-            const btnAd = document.getElementById("btn-ad");
+            const btnAd =
+                document.getElementById("btn-ad");
+
+            let sessionId = "";
 
             try {
                 adShowInProgress = true;
                 btnAd.disabled = true;
-                btnAd.innerHTML = "⏳ Загружаем рекламу...";
+                btnAd.innerHTML =
+                    "⏳ Загружаем рекламу...";
 
-                const controller = getAdsgramController();
+                if (!ADSGRAM_DEBUG) {
+                    // Одноразовый server token создаётся ДО показа.
+                    const session =
+                        await startAdRewardSession();
 
-                const beforeReward = {
-                    daily_ads_count:
-                        Number(userData.daily_ads_count || 0),
-                    game_attempts:
-                        Number(userData.game_attempts || 0),
-                    weekly_score:
-                        Number(userData.weekly_score || 0)
-                };
+                    sessionId =
+                        String(session.session_id || "");
 
-                // Rewarded Promise завершается после полного просмотра.
-                await controller.show();
+                    if (!sessionId) {
+                        throw new Error(
+                            "Не удалось создать рекламную сессию."
+                        );
+                    }
+                }
 
-                let data = null;
+                const controller =
+                    getAdsgramController();
+
+                // Для Rewarded AdsGram этот Promise resolve только
+                // когда реклама просмотрена до конца.
+                const showResult =
+                    await controller.show();
+
+                if (
+                    showResult
+                    && showResult.done === false
+                ) {
+                    throw new Error(
+                        "Реклама не была просмотрена до конца."
+                    );
+                }
+
+                // Никаких 30 секунд ожидания.
+                // После закрытия рекламы — только один быстрый API-запрос.
+                btnAd.innerHTML =
+                    "✅ Начисляем +50 ADP и 1 полёт...";
+
+                let data;
 
                 if (ADSGRAM_DEBUG) {
-                    // AdsGram официально НЕ отправляет Reward URL в debug mode.
-                    // Поэтому старое client-начисление оставлено только для ADMIN.
-                    btnAd.innerHTML =
-                        "🧪 Тестовая реклама просмотрена. Начисляем тестовую награду...";
-
-                    data = await grantAdRewardOnServer();
-
+                    data =
+                        await grantDebugAdRewardOnServer();
                 } else {
-                    // В production клиент НЕ может начислить себе награду.
-                    // Ждём server postback AdsGram -> FastAPI.
-                    btnAd.innerHTML =
-                        "✅ Реклама просмотрена. Ждём подтверждение AdsGram...";
-
-                    data = await waitForAdsgramServerReward(
-                        beforeReward
-                    );
-
-                    if (!data) {
-                        await syncUser();
-
-                        showAlert(
-                            "Реклама просмотрена. AdsGram ещё подтверждает награду. " +
-                            "Если подтверждение придёт с задержкой, +50 ADP и 1 полёт " +
-                            "появятся автоматически при следующем обновлении."
+                    data =
+                        await completeAdRewardSession(
+                            sessionId
                         );
-
-                        return;
-                    }
                 }
 
                 userData.game_attempts =
@@ -8546,10 +8552,10 @@
                     );
 
                 if (data.referral) {
-                    applyReferralData(data.referral);
+                    applyReferralData(
+                        data.referral
+                    );
                 } else {
-                    // Production status endpoint не возвращает referral payload.
-                    // Обновляем его через обычный sync.
                     await syncUser();
                 }
 
@@ -8558,17 +8564,22 @@
 
                 if (data.referral_activated) {
                     showAlert(
-                        `Реклама подтверждена! +50 ADP и 1 попытка. ` +
-                        `Реферальный бонус: ещё +${Number(data.referral_bonus || 10)} ADP.`
+                        `Готово! +50 ADP и +1 полёт. ` +
+                        `Реферальный бонус: ещё +${Number(
+                            data.referral_bonus || 10
+                        )} ADP.`
                     );
                 } else {
                     showAlert(
-                        "Реклама подтверждена! Начислено +50 ADP и 1 попытка."
+                        "Готово! Начислено +50 ADP и +1 полёт."
                     );
                 }
 
             } catch (error) {
-                console.error("Ошибка AdsGram / рекламной награды:", error);
+                console.error(
+                    "Ошибка AdsGram / рекламной награды:",
+                    error
+                );
 
                 const message = String(
                     error?.description ||

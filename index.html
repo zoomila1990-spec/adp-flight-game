@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.5: Instruction hub + contextual help across services -->
+    <!-- v12.6: Telegram notification settings -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -5733,6 +5733,295 @@
             }
         }
 
+
+        /* =========================================================
+           v12.6 — TELEGRAM NOTIFICATION SETTINGS
+           ========================================================= */
+
+        .notification-modal-content {
+            max-width: 386px !important;
+        }
+
+        .notification-modal-body {
+            gap: 9px !important;
+        }
+
+        .notification-hero {
+            min-height: 80px;
+            padding: 11px 12px;
+            display: grid;
+            grid-template-columns: 57px minmax(0, 1fr);
+            gap: 10px;
+            align-items: center;
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle at 14% 20%,
+                    rgba(55, 220, 255, .15),
+                    transparent 35%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(9, 51, 81, .94),
+                    rgba(4, 31, 54, .95)
+                );
+            border: 1px solid rgba(60, 211, 249, .20);
+        }
+
+        .notification-hero-icon {
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 17px;
+            background:
+                radial-gradient(
+                    circle,
+                    rgba(43, 211, 255, .20),
+                    rgba(5, 43, 72, .52)
+                );
+            border: 1px solid rgba(62, 220, 255, .33);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.04),
+                0 0 18px rgba(37, 203, 251, .11);
+        }
+
+        .notification-hero-icon .adp-aviation-icon {
+            width: 47px !important;
+            height: 47px !important;
+            flex-basis: 47px !important;
+            filter:
+                drop-shadow(0 0 7px rgba(58, 225, 255, .54))
+                drop-shadow(0 0 14px rgba(37, 145, 255, .20));
+        }
+
+        .notification-hero-copy {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .notification-hero-copy strong {
+            color: #f7fcff;
+            font-size: 13px;
+            font-weight: 900;
+        }
+
+        .notification-hero-copy span {
+            color: #97b4c8;
+            font-size: 9.5px;
+            line-height: 1.4;
+        }
+
+        .notification-settings-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            transition: opacity .18s ease;
+        }
+
+        .notification-settings-list.notifications-disabled {
+            opacity: .44;
+        }
+
+        .notification-setting {
+            position: relative;
+            min-height: 61px;
+            padding: 8px 10px;
+            display: grid;
+            grid-template-columns: 38px minmax(0,1fr) 47px;
+            gap: 8px;
+            align-items: center;
+            border-radius: 14px;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(9, 46, 73, .94),
+                    rgba(5, 29, 50, .95)
+                );
+            border: 1px solid rgba(61, 200, 239, .14);
+            cursor: pointer;
+        }
+
+        .notification-master {
+            grid-template-columns: minmax(0,1fr) 47px;
+            min-height: 58px;
+            background:
+                radial-gradient(
+                    circle at 8% 50%,
+                    rgba(58, 238, 219, .10),
+                    transparent 33%
+                ),
+                linear-gradient(
+                    145deg,
+                    rgba(11, 57, 75, .95),
+                    rgba(5, 32, 53, .96)
+                );
+            border-color: rgba(75, 231, 213, .23);
+        }
+
+        .notification-setting-icon {
+            width: 35px !important;
+            height: 35px !important;
+            flex: 0 0 35px !important;
+            justify-self: center;
+            background-position: center !important;
+            background-size: 110% !important;
+            filter:
+                drop-shadow(0 0 6px rgba(49, 215, 255, .42));
+        }
+
+        .notification-setting .adp-icon-league {
+            background-size: contain !important;
+            filter:
+                drop-shadow(0 0 6px rgba(255, 210, 57, .52));
+        }
+
+        .notification-setting-copy {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .notification-setting-copy strong {
+            color: #f3faff;
+            font-size: 10.5px;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .notification-setting-copy small {
+            color: #829fb5;
+            font-size: 8.5px;
+            line-height: 1.25;
+        }
+
+        .notification-switch {
+            position: relative;
+            width: 44px;
+            height: 25px;
+            justify-self: end;
+        }
+
+        .notification-switch input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .notification-slider {
+            position: absolute;
+            inset: 0;
+            border-radius: 999px;
+            background: #142f45;
+            border: 1px solid rgba(120, 164, 194, .22);
+            box-shadow: inset 0 2px 6px rgba(0,0,0,.23);
+            transition:
+                background .18s ease,
+                border-color .18s ease,
+                box-shadow .18s ease;
+        }
+
+        .notification-slider::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #7796ad;
+            box-shadow: 0 2px 7px rgba(0,0,0,.32);
+            transition:
+                transform .18s ease,
+                background .18s ease;
+        }
+
+        .notification-switch input:checked + .notification-slider {
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(31, 194, 184, .88),
+                    rgba(40, 196, 240, .88)
+                );
+            border-color: rgba(91, 244, 226, .55);
+            box-shadow:
+                inset 0 1px 0 rgba(255,255,255,.16),
+                0 0 12px rgba(56, 224, 218, .14);
+        }
+
+        .notification-switch input:checked + .notification-slider::after {
+            transform: translateX(19px);
+            background: #eaffff;
+        }
+
+        .notification-save-state {
+            min-height: 31px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 7px 10px;
+            border-radius: 11px;
+            color: #6fead9;
+            font-size: 9px;
+            font-weight: 700;
+            background: rgba(15, 73, 76, .20);
+            border: 1px solid rgba(74, 229, 207, .13);
+        }
+
+        .notification-save-state.error {
+            color: #ffb4b4;
+            background: rgba(108, 31, 42, .18);
+            border-color: rgba(255, 112, 125, .14);
+        }
+
+        .notification-note {
+            padding: 9px 10px;
+            border-radius: 12px;
+            color: #8daabd;
+            font-size: 8.7px;
+            line-height: 1.4;
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(9, 39, 62, .82),
+                    rgba(5, 27, 47, .86)
+                );
+            border: 1px solid rgba(59, 179, 216, .10);
+        }
+
+        .notification-note strong {
+            color: #d8f7ff;
+        }
+
+        .dock-notify-dot.disabled {
+            background: #5b7181 !important;
+            box-shadow: none !important;
+            opacity: .55;
+        }
+
+        @media (max-width: 360px) {
+            .notification-setting {
+                grid-template-columns: 34px minmax(0,1fr) 44px;
+                gap: 7px;
+                padding-left: 8px;
+                padding-right: 8px;
+            }
+
+            .notification-master {
+                grid-template-columns: minmax(0,1fr) 44px;
+            }
+
+            .notification-setting-icon {
+                width: 32px !important;
+                height: 32px !important;
+                flex-basis: 32px !important;
+            }
+        }
+
 </style>
 </head>
 
@@ -5900,11 +6189,141 @@
                 <span class="adp-aviation-icon adp-icon-instruction"></span>
                 <span>Инструкция</span>
             </button>
-            <button class="dock-item dock-notify" onclick="openNotificationsSoon()">
+            <button class="dock-item dock-notify" id="dock-notifications" onclick="openNotifications()">
                 <span class="adp-aviation-icon adp-icon-notify"></span>
                 <span>Уведомления</span>
-                <span class="dock-notify-dot"></span>
+                <span class="dock-notify-dot" id="dock-notify-dot"></span>
             </button>
+        </div>
+    </div>
+
+
+    <!-- =========================================================
+         МОДАЛЬНОЕ ОКНО: TELEGRAM-УВЕДОМЛЕНИЯ
+         ========================================================= -->
+    <div class="modal" id="modal-notifications">
+        <div class="modal-content notification-modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <span class="adp-aviation-icon adp-icon-notify"></span>
+                    <span>Уведомления</span>
+                </h3>
+                <button class="close-modal" onclick="closeModals()">✕</button>
+            </div>
+
+            <div class="modal-body notification-modal-body">
+                <div class="notification-hero">
+                    <div class="notification-hero-icon">
+                        <span class="adp-aviation-icon adp-icon-notify"></span>
+                    </div>
+                    <div class="notification-hero-copy">
+                        <strong>Telegram-уведомления</strong>
+                        <span>
+                            Выберите, о каких событиях ADP Flight League
+                            бот может вам напоминать.
+                        </span>
+                    </div>
+                </div>
+
+                <label class="notification-setting notification-master">
+                    <span class="notification-setting-copy">
+                        <strong>Все уведомления</strong>
+                        <small>Главный переключатель</small>
+                    </span>
+                    <span class="notification-switch">
+                        <input
+                            type="checkbox"
+                            id="notify-enabled"
+                            onchange="notificationSettingChanged()"
+                        >
+                        <span class="notification-slider"></span>
+                    </span>
+                </label>
+
+                <div class="notification-settings-list" id="notification-settings-list">
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-ad"></span>
+                        <span class="notification-setting-copy">
+                            <strong>Реклама снова доступна</strong>
+                            <small>Через 30 минут после просмотра</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-ad-ready" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-takeoff"></span>
+                        <span class="notification-setting-copy">
+                            <strong>Новый день после 5/5</strong>
+                            <small>Когда снова доступны 5 реклам</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-new-day" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-ranking"></span>
+                        <span class="notification-setting-copy">
+                            <strong>Изменения Top-10</strong>
+                            <small>Вход или выход из призовой десятки</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-top10" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-league"></span>
+                        <span class="notification-setting-copy">
+                            <strong>Конец недели</strong>
+                            <small>Напоминание за 2 часа до фиксации</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-week-ending" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-previous"></span>
+                        <span class="notification-setting-copy">
+                            <strong>Результат недели</strong>
+                            <small>Место, ADP и приз после фиксации</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-week-result" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+
+                    <label class="notification-setting">
+                        <span class="notification-setting-icon adp-aviation-icon adp-icon-wallet"></span>
+                        <span class="notification-setting-copy">
+                            <strong>TON-выплата</strong>
+                            <small>Подтверждение после отправки награды</small>
+                        </span>
+                        <span class="notification-switch">
+                            <input type="checkbox" id="notify-payout" onchange="notificationSettingChanged()">
+                            <span class="notification-slider"></span>
+                        </span>
+                    </label>
+                </div>
+
+                <div class="notification-save-state" id="notification-save-state">
+                    Настройки загружаются…
+                </div>
+
+                <div class="notification-note">
+                    Telegram сможет присылать сообщения только после того,
+                    как вы хотя бы один раз нажали <strong>Start / Запустить</strong>
+                    в личном чате с ботом.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -9071,9 +9490,255 @@
             }
         }
 
-        function openNotificationsSoon() {
+        let notificationSettings = {
+            enabled: true,
+            ad_ready: true,
+            new_day_ads: true,
+            week_ending: true,
+            weekly_result: true,
+            top10_changes: true,
+            payout: true
+        };
+
+        let notificationSaveTimer = null;
+        let notificationSaveInProgress = false;
+
+        function renderNotificationSettings() {
+            const map = {
+                "notify-enabled": notificationSettings.enabled,
+                "notify-ad-ready": notificationSettings.ad_ready,
+                "notify-new-day": notificationSettings.new_day_ads,
+                "notify-week-ending": notificationSettings.week_ending,
+                "notify-week-result": notificationSettings.weekly_result,
+                "notify-top10": notificationSettings.top10_changes,
+                "notify-payout": notificationSettings.payout
+            };
+
+            Object.entries(map).forEach(([id, value]) => {
+                const input = document.getElementById(id);
+                if (input) input.checked = Boolean(value);
+            });
+
+            const list = document.getElementById("notification-settings-list");
+            if (list) {
+                list.classList.toggle(
+                    "notifications-disabled",
+                    !notificationSettings.enabled
+                );
+            }
+
+            const dot = document.getElementById("dock-notify-dot");
+            if (dot) {
+                dot.classList.toggle(
+                    "disabled",
+                    !notificationSettings.enabled
+                );
+            }
+        }
+
+        function readNotificationSettingsFromUI() {
+            return {
+                enabled: Boolean(document.getElementById("notify-enabled")?.checked),
+                ad_ready: Boolean(document.getElementById("notify-ad-ready")?.checked),
+                new_day_ads: Boolean(document.getElementById("notify-new-day")?.checked),
+                week_ending: Boolean(document.getElementById("notify-week-ending")?.checked),
+                weekly_result: Boolean(document.getElementById("notify-week-result")?.checked),
+                top10_changes: Boolean(document.getElementById("notify-top10")?.checked),
+                payout: Boolean(document.getElementById("notify-payout")?.checked)
+            };
+        }
+
+        async function loadNotificationSettings() {
+            if (!telegramInitData) {
+                throw new Error(
+                    "Настройки уведомлений доступны только внутри Telegram."
+                );
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/user/notifications`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        init_data: telegramInitData
+                    })
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error(
+                    data.detail ||
+                    "Не удалось загрузить настройки уведомлений."
+                );
+            }
+
+            notificationSettings = {
+                enabled: Boolean(data.notifications?.enabled),
+                ad_ready: Boolean(data.notifications?.ad_ready),
+                new_day_ads: Boolean(data.notifications?.new_day_ads),
+                week_ending: Boolean(data.notifications?.week_ending),
+                weekly_result: Boolean(data.notifications?.weekly_result),
+                top10_changes: Boolean(data.notifications?.top10_changes),
+                payout: Boolean(data.notifications?.payout)
+            };
+
+            renderNotificationSettings();
+            return notificationSettings;
+        }
+
+        async function saveNotificationSettings() {
+            if (notificationSaveInProgress) {
+                return;
+            }
+
+            notificationSaveInProgress = true;
+
+            const state = document.getElementById(
+                "notification-save-state"
+            );
+
+            if (state) {
+                state.textContent = "Сохраняем…";
+                state.classList.remove("error");
+            }
+
+            const nextSettings =
+                readNotificationSettingsFromUI();
+
+            notificationSettings = nextSettings;
+            renderNotificationSettings();
+
+            try {
+                const response = await fetch(
+                    `${API_URL}/api/user/notifications/update`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            init_data: telegramInitData,
+                            ...nextSettings
+                        })
+                    }
+                );
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(
+                        data.detail ||
+                        "Не удалось сохранить настройки."
+                    );
+                }
+
+                notificationSettings = {
+                    enabled: Boolean(data.notifications?.enabled),
+                    ad_ready: Boolean(data.notifications?.ad_ready),
+                    new_day_ads: Boolean(data.notifications?.new_day_ads),
+                    week_ending: Boolean(data.notifications?.week_ending),
+                    weekly_result: Boolean(data.notifications?.weekly_result),
+                    top10_changes: Boolean(data.notifications?.top10_changes),
+                    payout: Boolean(data.notifications?.payout)
+                };
+
+                renderNotificationSettings();
+
+                if (state) {
+                    state.textContent = "✓ Настройки сохранены";
+                }
+
+                haptic("light");
+
+            } catch (error) {
+                console.error(
+                    "Ошибка сохранения уведомлений:",
+                    error
+                );
+
+                if (state) {
+                    state.textContent =
+                        "Не удалось сохранить. Попробуйте ещё раз.";
+                    state.classList.add("error");
+                }
+
+            } finally {
+                notificationSaveInProgress = false;
+            }
+        }
+
+        function notificationSettingChanged() {
+            notificationSettings =
+                readNotificationSettingsFromUI();
+
+            renderNotificationSettings();
+
+            if (notificationSaveTimer) {
+                clearTimeout(notificationSaveTimer);
+            }
+
+            const state = document.getElementById(
+                "notification-save-state"
+            );
+
+            if (state) {
+                state.textContent = "Есть изменения…";
+                state.classList.remove("error");
+            }
+
+            notificationSaveTimer = setTimeout(
+                saveNotificationSettings,
+                250
+            );
+        }
+
+        async function openNotifications() {
             haptic("light");
-            showAlert("Уведомления уже в плане. Следующим этапом добавим настройки push-уведомлений ADP Flight League.");
+            closeModals();
+
+            const modal =
+                document.getElementById("modal-notifications");
+            const state =
+                document.getElementById("notification-save-state");
+
+            if (modal) {
+                modal.style.display = "flex";
+            }
+
+            if (state) {
+                state.textContent = "Настройки загружаются…";
+                state.classList.remove("error");
+            }
+
+            try {
+                await loadNotificationSettings();
+
+                if (state) {
+                    state.textContent = "✓ Настройки синхронизированы";
+                }
+
+            } catch (error) {
+                console.error(
+                    "Ошибка загрузки уведомлений:",
+                    error
+                );
+
+                if (state) {
+                    state.textContent =
+                        "Не удалось загрузить настройки.";
+                    state.classList.add("error");
+                }
+
+                showAlert(
+                    error.message ||
+                    "Не удалось загрузить настройки уведомлений."
+                );
+            }
         }
 
         function openInstruction() {
@@ -9097,6 +9762,7 @@
             document.getElementById("modal-admin-payouts").style.display = "none";
             document.getElementById("modal-rules").style.display = "none";
             document.getElementById("modal-instruction").style.display = "none";
+            document.getElementById("modal-notifications").style.display = "none";
             document.getElementById("modal-referral").style.display = "none";
             document.getElementById("modal-community").style.display = "none";
             document.getElementById("modal-context-help").style.display = "none";

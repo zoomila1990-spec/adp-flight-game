@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.2.1: Premium in-flight visual redesign + CSS fix -->
+    <!-- v11.3: Smooth flight time + progressive weather + softer difficulty -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -1905,6 +1905,31 @@
             box-shadow: 0 0 10px rgba(69, 245, 206, 0.75);
         }
 
+
+        .game-weather-status {
+            transition: color 260ms ease;
+        }
+
+        .game-flight-status-dot.weather-clear {
+            background: #45f5ce;
+            box-shadow: 0 0 10px rgba(69, 245, 206, 0.75);
+        }
+
+        .game-flight-status-dot.weather-cloudy {
+            background: #8fc4db;
+            box-shadow: 0 0 10px rgba(143, 196, 219, 0.52);
+        }
+
+        .game-flight-status-dot.weather-rain {
+            background: #5ea8ff;
+            box-shadow: 0 0 10px rgba(94, 168, 255, 0.62);
+        }
+
+        .game-flight-status-dot.weather-storm {
+            background: #ffd86a;
+            box-shadow: 0 0 12px rgba(255, 216, 106, 0.78);
+        }
+
         .game-hud {
             width: 100%;
             display: grid;
@@ -2683,8 +2708,13 @@
                 </div>
 
                 <div class="game-flight-status">
-                    <span class="game-flight-status-dot"></span>
-                    <span>СЕССИЯ АКТИВНА</span>
+                    <span
+                        class="game-flight-status-dot weather-clear"
+                        id="game-weather-dot"
+                    ></span>
+                    <span class="game-weather-status" id="game-weather-status">
+                        ЯСНО
+                    </span>
                 </div>
             </div>
 
@@ -5032,6 +5062,27 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         let gameSpeedMultiplier = 1;
         let elapsedGameTime = 0;
 
+        // Визуальное время движется только через ограниченный deltaSeconds.
+        // Поэтому фон больше не "перематывается" после коротких зависаний WebView.
+        let visualGameTime = 0;
+
+        // Погода зависит от сложности и меняется плавно:
+        // ясно → облачно → дождь → гроза.
+        let weatherCloudiness = 0;
+        let weatherRain = 0;
+        let weatherStorm = 0;
+        let weatherName = "ЯСНО";
+        let lightningFlash = 0;
+        let lightningTimer = 5;
+        let rainDrops = [];
+
+        // Лёгкие Canvas-эффекты. Никаких DOM-элементов на каждый +1 ADP.
+        let scorePopups = [];
+        let isCrashing = false;
+        let crashTimer = 0;
+        let crashFlash = 0;
+        let crashParticles = [];
+
         // Телеметрия Anti-Cheat v5.
         // Сервер сравнивает эти данные со временем своей игровой сессии.
         let flightStartedAtMs = 0;
@@ -5057,45 +5108,69 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
         const planeImage = new Image();
         planeImage.src = "data:image/svg+xml;utf8," + encodeURIComponent(`
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 116">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 142">
                 <defs>
-                    <linearGradient id="body" x1="0" y1="0" x2="1" y2="1">
+                    <linearGradient id="fuselage" x1="0" y1="0" x2="1" y2="1">
                         <stop offset="0%" stop-color="#ffffff"/>
-                        <stop offset="45%" stop-color="#e9fbff"/>
-                        <stop offset="100%" stop-color="#9dd9e9"/>
+                        <stop offset="52%" stop-color="#eaf7fb"/>
+                        <stop offset="100%" stop-color="#9fc7d5"/>
                     </linearGradient>
-                    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#72ffe2"/>
-                        <stop offset="55%" stop-color="#31d7dc"/>
-                        <stop offset="100%" stop-color="#188ec8"/>
+                    <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#a9fff0"/>
+                        <stop offset="48%" stop-color="#37cfd4"/>
+                        <stop offset="100%" stop-color="#187ead"/>
+                    </linearGradient>
+                    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#8ae8ff"/>
+                        <stop offset="100%" stop-color="#064f72"/>
                     </linearGradient>
                     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stop-color="#fff0aa"/>
-                        <stop offset="100%" stop-color="#f2b847"/>
+                        <stop offset="0%" stop-color="#fff0a8"/>
+                        <stop offset="100%" stop-color="#dca63d"/>
                     </linearGradient>
                 </defs>
 
-                <ellipse cx="50" cy="67" rx="19" ry="39" fill="rgba(0,24,42,0.24)"/>
+                <!-- swept wings -->
+                <path d="M54 53 L9 77 L15 88 L55 71 Z" fill="url(#metal)"/>
+                <path d="M66 53 L111 77 L105 88 L65 71 Z" fill="url(#metal)"/>
 
-                <path d="M50 43 L6 62 L14 74 L50 58 Z" fill="url(#wing)"/>
-                <path d="M50 43 L94 62 L86 74 L50 58 Z" fill="url(#wing)"/>
+                <!-- engines -->
+                <ellipse cx="31" cy="76" rx="7.5" ry="13" fill="#d9eef3"/>
+                <ellipse cx="89" cy="76" rx="7.5" ry="13" fill="#d9eef3"/>
+                <ellipse cx="31" cy="77" rx="4.8" ry="9.2" fill="#174c64"/>
+                <ellipse cx="89" cy="77" rx="4.8" ry="9.2" fill="#174c64"/>
 
-                <path d="M40 20 Q50 4 60 20 L62 88 Q59 102 50 112 Q41 102 38 88 Z"
-                      fill="url(#body)"/>
+                <!-- main fuselage -->
+                <path
+                    d="M60 5
+                       C51 17 48 31 48 48
+                       L50 108
+                       C51 121 55 132 60 139
+                       C65 132 69 121 70 108
+                       L72 48
+                       C72 31 69 17 60 5 Z"
+                    fill="url(#fuselage)"
+                />
 
-                <path d="M42 23 Q50 13 58 23 L56 41 Q50 36 44 41 Z"
-                      fill="#0a5d86"/>
-                <path d="M44 27 Q50 21 56 27 L55 35 Q50 31 45 35 Z"
-                      fill="#65dbff"/>
+                <!-- cockpit -->
+                <path
+                    d="M52 33
+                       C54 22 57 16 60 13
+                       C63 16 66 22 68 33
+                       L66 43
+                       C62 40 58 40 54 43 Z"
+                    fill="url(#glass)"
+                />
 
-                <path d="M43 83 L23 101 L33 108 L50 94 Z" fill="url(#wing)"/>
-                <path d="M57 83 L77 101 L67 108 L50 94 Z" fill="url(#wing)"/>
+                <!-- tailplane -->
+                <path d="M53 107 L28 124 L36 132 L59 117 Z" fill="url(#metal)"/>
+                <path d="M67 107 L92 124 L84 132 L61 117 Z" fill="url(#metal)"/>
 
-                <path d="M48 69 L50 57 L52 69 L52 102 L48 102 Z"
-                      fill="#dff7fb"/>
+                <!-- center stripe -->
+                <path d="M58.2 46 L61.8 46 L62.2 116 L57.8 116 Z" fill="#cceff4"/>
 
-                <path d="M46 78 L54 78 L53 83 L47 83 Z" fill="url(#gold)"/>
-                <circle cx="50" cy="57" r="2.5" fill="#ffd86a"/>
+                <!-- subtle ADP gold marker -->
+                <path d="M56 87 L64 87 L63 93 L57 93 Z" fill="url(#gold)"/>
             </svg>
         `);
 
@@ -5184,6 +5259,23 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             score = 0;
             gameSpeedMultiplier = 1;
             elapsedGameTime = 0;
+            visualGameTime = 0;
+
+            weatherCloudiness = 0;
+            weatherRain = 0;
+            weatherStorm = 0;
+            weatherName = "ЯСНО";
+            lightningFlash = 0;
+            lightningTimer = randomBetween(4.5, 7.5);
+            initRainDrops();
+
+            scorePopups = [];
+            isCrashing = false;
+            crashTimer = 0;
+            crashFlash = 0;
+            crashParticles = [];
+
+            updateWeatherLabel("ЯСНО");
 
             // Начинаем измерять реальную продолжительность именно этого полёта.
             flightStartedAtMs = performance.now();
@@ -5232,12 +5324,25 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         function updateGame(deltaSeconds) {
             elapsedGameTime += deltaSeconds;
 
-            // Сложность растет не только от счета, но и понемногу от времени в полете.
-            // Первые секунды остаются дружелюбными, а хороший рекорд требует реакции.
+            visualGameTime += deltaSeconds;
+
+            if (isCrashing) {
+                updateCrashEffect(deltaSeconds);
+                return;
+            }
+
+            // v11.3: рост сложности стал заметно мягче.
+            // Ориентир:
+            // ~x1.4–1.5 около первых 10 ADP,
+            // ~x2 около 25 ADP,
+            // максимум x3.6 только в сильном длительном полёте.
             gameSpeedMultiplier = Math.min(
-                1 + score * 0.065 + elapsedGameTime * 0.008,
-                4.5
+                1 + score * 0.035 + elapsedGameTime * 0.0035,
+                3.6
             );
+
+            updateWeather(deltaSeconds);
+            updateScorePopups(deltaSeconds);
 
             // Запоминаем максимальную сложность, достигнутую за этот полёт.
             maxSpeedMultiplierReached = Math.max(
@@ -5312,11 +5417,18 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                     obstacle.passed = true;
                     score += 1;
                     document.getElementById("current-game-score").innerText = String(score);
-                    haptic("light");
+
+                    addScorePopup();
+
+                    // Вибрация больше не вызывается на каждом +1:
+                    // внутри Telegram WebView это могло давать микрофризы.
+                    if (score % 5 === 0) {
+                        haptic("light");
+                    }
                 }
 
                 if (checkCollision(plane, obstacle)) {
-                    finishGame("collision");
+                    beginCrashEffect();
                     return;
                 }
 
@@ -5326,8 +5438,213 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             }
         }
 
+        function smoothStep(edge0, edge1, value) {
+            const t = clamp((value - edge0) / (edge1 - edge0), 0, 1);
+            return t * t * (3 - 2 * t);
+        }
+
+        function approach(current, target, speed, deltaSeconds) {
+            const blend = 1 - Math.exp(-speed * deltaSeconds);
+            return current + (target - current) * blend;
+        }
+
+        function initRainDrops() {
+            rainDrops = Array.from({ length: 72 }, () => ({
+                x: randomBetween(-30, GAME_WIDTH + 30),
+                y: randomBetween(-GAME_HEIGHT, GAME_HEIGHT),
+                length: randomBetween(10, 22),
+                speed: randomBetween(290, 470),
+                drift: randomBetween(-42, -20)
+            }));
+        }
+
+        function updateWeather(deltaSeconds) {
+            const cloudyTarget = smoothStep(1.28, 1.72, gameSpeedMultiplier);
+            const rainTarget = smoothStep(1.92, 2.48, gameSpeedMultiplier);
+            const stormTarget = smoothStep(2.78, 3.42, gameSpeedMultiplier);
+
+            weatherCloudiness = approach(
+                weatherCloudiness,
+                cloudyTarget,
+                0.65,
+                deltaSeconds
+            );
+            weatherRain = approach(
+                weatherRain,
+                rainTarget,
+                0.60,
+                deltaSeconds
+            );
+            weatherStorm = approach(
+                weatherStorm,
+                stormTarget,
+                0.52,
+                deltaSeconds
+            );
+
+            let nextName = "ЯСНО";
+
+            if (weatherStorm > 0.42) {
+                nextName = "ГРОЗА";
+            } else if (weatherRain > 0.34) {
+                nextName = "ДОЖДЬ";
+            } else if (weatherCloudiness > 0.36) {
+                nextName = "ОБЛАЧНО";
+            }
+
+            if (nextName !== weatherName) {
+                weatherName = nextName;
+                updateWeatherLabel(nextName);
+            }
+
+            for (const drop of rainDrops) {
+                drop.y += drop.speed * (0.72 + weatherRain * 0.58) * deltaSeconds;
+                drop.x += drop.drift * deltaSeconds;
+
+                if (
+                    drop.y > GAME_HEIGHT + 30 ||
+                    drop.x < -50
+                ) {
+                    drop.x = randomBetween(20, GAME_WIDTH + 60);
+                    drop.y = randomBetween(-130, -20);
+                    drop.length = randomBetween(10, 22);
+                    drop.speed = randomBetween(290, 470);
+                }
+            }
+
+            if (weatherStorm > 0.30) {
+                lightningTimer -= deltaSeconds;
+
+                if (lightningTimer <= 0) {
+                    lightningFlash = randomBetween(0.34, 0.62);
+                    lightningTimer = randomBetween(4.2, 8.0);
+                }
+            } else {
+                lightningTimer = Math.max(
+                    lightningTimer,
+                    randomBetween(3.5, 5.5)
+                );
+            }
+
+            lightningFlash = Math.max(
+                0,
+                lightningFlash - deltaSeconds * 2.7
+            );
+        }
+
+        function updateWeatherLabel(name) {
+            const status = document.getElementById("game-weather-status");
+            const dot = document.getElementById("game-weather-dot");
+
+            if (!status || !dot) {
+                return;
+            }
+
+            status.textContent = name;
+
+            dot.classList.remove(
+                "weather-clear",
+                "weather-cloudy",
+                "weather-rain",
+                "weather-storm"
+            );
+
+            if (name === "ГРОЗА") {
+                dot.classList.add("weather-storm");
+            } else if (name === "ДОЖДЬ") {
+                dot.classList.add("weather-rain");
+            } else if (name === "ОБЛАЧНО") {
+                dot.classList.add("weather-cloudy");
+            } else {
+                dot.classList.add("weather-clear");
+            }
+        }
+
+        function addScorePopup() {
+            scorePopups.push({
+                x: plane.x + plane.width / 2 + randomBetween(-8, 8),
+                y: plane.y + 7,
+                life: 0.78,
+                maxLife: 0.78
+            });
+
+            if (scorePopups.length > 6) {
+                scorePopups.shift();
+            }
+        }
+
+        function updateScorePopups(deltaSeconds) {
+            for (let i = scorePopups.length - 1; i >= 0; i--) {
+                const popup = scorePopups[i];
+                popup.life -= deltaSeconds;
+                popup.y -= 27 * deltaSeconds;
+
+                if (popup.life <= 0) {
+                    scorePopups.splice(i, 1);
+                }
+            }
+        }
+
+        function beginCrashEffect() {
+            if (isCrashing) {
+                return;
+            }
+
+            isCrashing = true;
+            crashTimer = 0.28;
+            crashFlash = 0.72;
+            haptic("heavy");
+
+            const cx = plane.x + plane.width / 2;
+            const cy = plane.y + plane.height / 2;
+
+            crashParticles = Array.from({ length: 18 }, (_, index) => {
+                const angle = (Math.PI * 2 * index) / 18 + randomBetween(-0.18, 0.18);
+                const speed = randomBetween(70, 180);
+
+                return {
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: randomBetween(0.22, 0.42),
+                    size: randomBetween(1.5, 3.8),
+                    warm: Math.random() > 0.52
+                };
+            });
+        }
+
+        function updateCrashEffect(deltaSeconds) {
+            crashTimer -= deltaSeconds;
+            crashFlash = Math.max(
+                0,
+                crashFlash - deltaSeconds * 2.9
+            );
+
+            plane.tilt += deltaSeconds * 5.6;
+            plane.y += 38 * deltaSeconds;
+
+            for (let i = crashParticles.length - 1; i >= 0; i--) {
+                const particle = crashParticles[i];
+
+                particle.life -= deltaSeconds;
+                particle.x += particle.vx * deltaSeconds;
+                particle.y += particle.vy * deltaSeconds;
+                particle.vy += 120 * deltaSeconds;
+                particle.vx *= Math.pow(0.90, deltaSeconds * 60);
+
+                if (particle.life <= 0) {
+                    crashParticles.splice(i, 1);
+                }
+            }
+
+            if (crashTimer <= 0) {
+                finishGame("collision");
+            }
+        }
+
         function getDifficultyProgress() {
-            return clamp((gameSpeedMultiplier - 1) / 3.5, 0, 1);
+            return clamp((gameSpeedMultiplier - 1) / 2.6, 0, 1);
         }
 
         function spawnChallenge() {
@@ -5335,9 +5652,9 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             // После разогрева иногда появляются два объекта одновременно.
             // Вероятность растет постепенно, поэтому начало игры не становится резким.
-            const formationChance = score < 10
+            const formationChance = score < 12
                 ? 0
-                : Math.min(0.36, 0.10 + difficulty * 0.30);
+                : Math.min(0.30, 0.07 + difficulty * 0.25);
 
             if (Math.random() < formationChance) {
                 spawnObstacleFormation(difficulty);
@@ -5452,6 +5769,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             drawFlightBackground();
             drawAtmosphereDetails();
+            drawRain();
             drawPlaneTrail();
 
             for (const obstacle of obstacles) {
@@ -5459,11 +5777,16 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             }
 
             drawPlane();
+            drawScorePopups();
+            drawCrashEffects();
             drawFlightVignette();
+            drawLightningFlash();
         }
 
         function drawFlightBackground() {
             const sky = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+
+            // Базовое ясное небо.
             sky.addColorStop(0, "#0b4269");
             sky.addColorStop(0.42, "#087ba6");
             sky.addColorStop(0.72, "#16a2c2");
@@ -5471,6 +5794,22 @@ ${shortenTonAddress(userData.ton_wallet_address)}
 
             ctx.fillStyle = sky;
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+            // Чем выше сложность, тем тяжелее атмосфера.
+            if (weatherCloudiness > 0.01) {
+                ctx.fillStyle = `rgba(34, 61, 82, ${0.22 * weatherCloudiness})`;
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
+
+            if (weatherRain > 0.01) {
+                ctx.fillStyle = `rgba(17, 38, 64, ${0.20 * weatherRain})`;
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
+
+            if (weatherStorm > 0.01) {
+                ctx.fillStyle = `rgba(14, 22, 42, ${0.30 * weatherStorm})`;
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
 
             const glow = ctx.createRadialGradient(
                 GAME_WIDTH * 0.52,
@@ -5480,7 +5819,11 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 GAME_HEIGHT * 0.18,
                 GAME_WIDTH * 0.78
             );
-            glow.addColorStop(0, "rgba(198,247,255,0.20)");
+
+            glow.addColorStop(
+                0,
+                `rgba(198,247,255,${0.20 * (1 - weatherStorm * 0.70)})`
+            );
             glow.addColorStop(1, "rgba(198,247,255,0)");
 
             ctx.fillStyle = glow;
@@ -5490,45 +5833,81 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         function drawAtmosphereDetails() {
             ctx.save();
 
-            const now = performance.now() / 1000;
-            const travel = now * (34 + gameSpeedMultiplier * 16);
+            // ВАЖНО: никакого performance.now().
+            // Фон движется по visualGameTime, который ограничен тем же deltaSeconds,
+            // что и физика игры — поэтому нет быстрой "перемотки" после микрофризов.
+            const travel = visualGameTime * (30 + gameSpeedMultiplier * 13);
 
-            // Мягкие дальние облака: декоративные, полупрозрачные,
-            // поэтому их легко отличить от настоящих препятствий.
             const hazeClouds = [
-                { x: 45, y: 40, s: 0.85, a: 0.08 },
-                { x: 315, y: 145, s: 1.10, a: 0.065 },
-                { x: 80, y: 290, s: 1.25, a: 0.055 },
-                { x: 320, y: 405, s: 0.90, a: 0.07 }
+                { x: 45, y: 40, s: 0.85, a: 0.07 },
+                { x: 315, y: 145, s: 1.10, a: 0.06 },
+                { x: 80, y: 290, s: 1.25, a: 0.05 },
+                { x: 320, y: 405, s: 0.90, a: 0.065 },
+                { x: 185, y: 230, s: 1.38, a: 0.045 }
             ];
 
             for (const cloud of hazeClouds) {
-                const y = ((cloud.y + travel) % (GAME_HEIGHT + 130)) - 65;
+                const y = ((cloud.y + travel) % (GAME_HEIGHT + 140)) - 70;
 
-                ctx.globalAlpha = cloud.a;
-                ctx.fillStyle = "#e9fbff";
+                ctx.globalAlpha =
+                    cloud.a +
+                    weatherCloudiness * 0.08 +
+                    weatherStorm * 0.035;
+
+                ctx.fillStyle = weatherStorm > 0.45
+                    ? "#b8cbd4"
+                    : "#e9fbff";
 
                 const w = 76 * cloud.s;
                 const h = 30 * cloud.s;
 
                 ctx.beginPath();
-                ctx.ellipse(cloud.x - w * 0.2, y, w * 0.32, h * 0.48, 0, 0, Math.PI * 2);
-                ctx.ellipse(cloud.x + w * 0.06, y - h * 0.18, w * 0.35, h * 0.60, 0, 0, Math.PI * 2);
-                ctx.ellipse(cloud.x + w * 0.34, y, w * 0.28, h * 0.45, 0, 0, Math.PI * 2);
+                ctx.ellipse(
+                    cloud.x - w * 0.2,
+                    y,
+                    w * 0.32,
+                    h * 0.48,
+                    0,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.ellipse(
+                    cloud.x + w * 0.06,
+                    y - h * 0.18,
+                    w * 0.35,
+                    h * 0.60,
+                    0,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.ellipse(
+                    cloud.x + w * 0.34,
+                    y,
+                    w * 0.28,
+                    h * 0.45,
+                    0,
+                    0,
+                    Math.PI * 2
+                );
                 ctx.fill();
             }
 
-            // Скоростные линии по краям создают ощущение полёта,
-            // не вмешиваясь в реальную механику.
-            const lineOffset = (travel * 1.6) % 72;
+            const lineOffset = (travel * 1.45) % 76;
 
-            ctx.globalAlpha = 0.20;
+            ctx.globalAlpha =
+                0.15 +
+                getDifficultyProgress() * 0.06;
+
             ctx.strokeStyle = "#d6fbff";
-            ctx.lineWidth = 1.3;
+            ctx.lineWidth = 1.15;
             ctx.lineCap = "round";
 
-            for (let y = -80 + lineOffset; y < GAME_HEIGHT + 60; y += 72) {
-                const length = 17 + gameSpeedMultiplier * 2.2;
+            for (
+                let y = -80 + lineOffset;
+                y < GAME_HEIGHT + 60;
+                y += 76
+            ) {
+                const length = 14 + gameSpeedMultiplier * 2.0;
 
                 ctx.beginPath();
                 ctx.moveTo(17, y);
@@ -5536,8 +5915,47 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 ctx.stroke();
 
                 ctx.beginPath();
-                ctx.moveTo(GAME_WIDTH - 17, y + 24);
-                ctx.lineTo(GAME_WIDTH - 17, y + 24 + length);
+                ctx.moveTo(GAME_WIDTH - 17, y + 27);
+                ctx.lineTo(GAME_WIDTH - 17, y + 27 + length);
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        function drawRain() {
+            if (weatherRain < 0.05) {
+                return;
+            }
+
+            ctx.save();
+
+            ctx.globalAlpha =
+                0.12 +
+                weatherRain * 0.34 +
+                weatherStorm * 0.10;
+
+            ctx.strokeStyle = "#d7f1ff";
+            ctx.lineWidth = 1;
+            ctx.lineCap = "round";
+
+            const visibleDrops = Math.round(
+                26 + weatherRain * 30 + weatherStorm * 14
+            );
+
+            for (
+                let i = 0;
+                i < Math.min(visibleDrops, rainDrops.length);
+                i++
+            ) {
+                const drop = rainDrops[i];
+
+                ctx.beginPath();
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(
+                    drop.x + drop.drift * 0.035,
+                    drop.y + drop.length
+                );
                 ctx.stroke();
             }
 
@@ -5549,7 +5967,9 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             const baseY = plane.y + plane.height * 0.84;
             const trailStrength = Math.min(
                 1,
-                0.35 + Math.abs(plane.vx) / plane.maxHorizontalSpeed * 0.35
+                0.30 +
+                gameSpeedMultiplier * 0.08 +
+                Math.abs(plane.vx) / plane.maxHorizontalSpeed * 0.28
             );
 
             ctx.save();
@@ -5560,22 +5980,96 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 centerX,
                 baseY + 54
             );
-            trail.addColorStop(0, `rgba(116,255,230,${0.28 * trailStrength})`);
+
+            trail.addColorStop(
+                0,
+                `rgba(116,255,230,${0.24 * trailStrength})`
+            );
             trail.addColorStop(1, "rgba(116,255,230,0)");
 
             ctx.strokeStyle = trail;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1.8;
             ctx.lineCap = "round";
 
             ctx.beginPath();
             ctx.moveTo(centerX - 6, baseY);
-            ctx.lineTo(centerX - 4 - plane.vx * 0.018, baseY + 46);
+            ctx.lineTo(
+                centerX - 4 - plane.vx * 0.018,
+                baseY + 46
+            );
             ctx.stroke();
 
             ctx.beginPath();
             ctx.moveTo(centerX + 6, baseY);
-            ctx.lineTo(centerX + 4 - plane.vx * 0.018, baseY + 46);
+            ctx.lineTo(
+                centerX + 4 - plane.vx * 0.018,
+                baseY + 46
+            );
             ctx.stroke();
+
+            ctx.restore();
+        }
+
+        function drawScorePopups() {
+            if (!scorePopups.length) {
+                return;
+            }
+
+            ctx.save();
+            ctx.textAlign = "center";
+            ctx.font = "900 14px Arial, sans-serif";
+
+            for (const popup of scorePopups) {
+                const alpha = clamp(
+                    popup.life / popup.maxLife,
+                    0,
+                    1
+                );
+
+                ctx.globalAlpha = alpha;
+                ctx.shadowColor = "rgba(69,245,206,0.48)";
+                ctx.shadowBlur = 8;
+                ctx.fillStyle = "#dffff8";
+                ctx.fillText("+1 ADP", popup.x, popup.y);
+            }
+
+            ctx.restore();
+        }
+
+        function drawCrashEffects() {
+            if (!isCrashing) {
+                return;
+            }
+
+            ctx.save();
+
+            for (const particle of crashParticles) {
+                ctx.globalAlpha = clamp(
+                    particle.life / 0.42,
+                    0,
+                    1
+                );
+
+                ctx.fillStyle = particle.warm
+                    ? "#ffd86a"
+                    : "#76ffe3";
+
+                ctx.beginPath();
+                ctx.arc(
+                    particle.x,
+                    particle.y,
+                    particle.size,
+                    0,
+                    Math.PI * 2
+                );
+                ctx.fill();
+            }
+
+            if (crashFlash > 0) {
+                ctx.globalAlpha = crashFlash * 0.32;
+                ctx.fillStyle = "#eaffff";
+                ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+            }
 
             ctx.restore();
         }
@@ -5593,11 +6087,26 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             );
 
             vignette.addColorStop(0, "rgba(0,0,0,0)");
-            vignette.addColorStop(1, "rgba(1,15,28,0.20)");
+            vignette.addColorStop(
+                1,
+                `rgba(1,15,28,${0.18 + weatherStorm * 0.10})`
+            );
 
             ctx.fillStyle = vignette;
             ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
+            ctx.restore();
+        }
+
+        function drawLightningFlash() {
+            if (lightningFlash <= 0) {
+                return;
+            }
+
+            ctx.save();
+            ctx.globalAlpha = lightningFlash * weatherStorm;
+            ctx.fillStyle = "#e9f6ff";
+            ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
             ctx.restore();
         }
 
@@ -5614,12 +6123,16 @@ ${shortenTonAddress(userData.ton_wallet_address)}
             ctx.shadowOffsetY = 5;
 
             if (planeImage.complete && planeImage.naturalWidth > 0) {
+                // Визуально самолёт чуть крупнее, но collision hitbox остаётся прежним.
+                const visualWidth = plane.width * 1.18;
+                const visualHeight = plane.height * 1.18;
+
                 ctx.drawImage(
                     planeImage,
-                    -plane.width / 2,
-                    -plane.height / 2,
-                    plane.width,
-                    plane.height
+                    -visualWidth / 2,
+                    -visualHeight / 2,
+                    visualWidth,
+                    visualHeight
                 );
             } else {
                 drawPlaneFallback();
@@ -5759,7 +6272,7 @@ ${shortenTonAddress(userData.ton_wallet_address)}
         function drawBird(obstacle) {
             const cx = obstacle.x + obstacle.width / 2;
             const cy = obstacle.y + obstacle.height / 2;
-            const wingLift = Math.sin(performance.now() * 0.014 + obstacle.x) * 2.2;
+            const wingLift = Math.sin(visualGameTime * 8.4 + obstacle.x * 0.03) * 2.2;
 
             ctx.save();
 
@@ -5894,7 +6407,9 @@ ${shortenTonAddress(userData.ton_wallet_address)}
                 animationFrameId = null;
             }
 
-            haptic("heavy");
+            if (reason !== "collision") {
+                haptic("heavy");
+            }
 
             document.getElementById("game-screen").style.display = "none";
             document.getElementById("main-menu").style.display = "flex";

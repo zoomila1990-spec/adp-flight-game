@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v11.6.1: Main screen spacing + fixed game-screen DOM nesting -->
+    <!-- v11.6.2: Ad button shows +50 ADP +1 flight -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -846,7 +846,8 @@
             justify-content: flex-start;
             padding-left: 15px;
             padding-right: 48px;
-            font-size: 11.5px;
+            font-size: 11px;
+            line-height: 1.25;
             text-align: left;
         }
 
@@ -2514,7 +2515,7 @@
                         <div class="bonus-grid">
                 <div class="bonus-item bonus-primary">
                     <button class="btn btn-ad" id="btn-ad" onclick="watchAd()">
-                        📺 Реклама +50 ADP
+                        📺 Реклама · +50 ADP · +1 полёт
                     </button>
                     <button
                         class="context-info-btn"
@@ -4382,7 +4383,7 @@
 
             if (userData.is_admin) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Тестовая реклама · +50 ADP";
+                btnAd.innerHTML = "📺 Тестовая реклама · +50 ADP · +1 полёт";
                 return false;
             }
 
@@ -4398,7 +4399,7 @@
 
             if (userData.last_ad_time === 0 || remaining <= 0) {
                 btnAd.disabled = false;
-                btnAd.innerHTML = "📺 Реклама · +50 ADP";
+                btnAd.innerHTML = "📺 Реклама · +50 ADP · +1 полёт";
                 return false;
             }
 

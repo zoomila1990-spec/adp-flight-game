@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ADP Flight League</title>
-    <!-- v12.9.8: production AdsGram UnitID 47861 -->
+    <!-- v12.10: production cleanup + unified ad limits -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
@@ -4066,17 +4066,6 @@
             color: #ffd85d;
         }
 
-        .ad-limit-chip.test-mode::after {
-            content: "ТЕСТ";
-            position: absolute;
-            left: 0;
-            top: 26px;
-            color: #7da9c5;
-            font-size: 6px;
-            font-weight: 850;
-            letter-spacing: .08em;
-        }
-
         @media (max-width: 360px) {
             #main-menu {
                 padding-top: 116px;
@@ -7152,7 +7141,7 @@
     </div>
 
     <!-- =========================================================
-         МОДАЛЬНОЕ ОКНО: ВИРТУАЛЬНЫЙ TOP-10 TEST (ADMIN)
+         МОДАЛЬНОЕ ОКНО: ВИРТУАЛЬНЫЙ TOP-10 (ADMIN)
          ========================================================= -->
     <div class="modal" id="modal-virtual-top10">
         <div class="modal-content">
@@ -7187,7 +7176,7 @@
     </div>
 
     <!-- =========================================================
-         МОДАЛЬНОЕ ОКНО: SAFE PREVIEW ЗАКРЫТИЯ НЕДЕЛИ (ADMIN)
+         МОДАЛЬНОЕ ОКНО: ПРЕДПРОСМОТР ЗАКРЫТИЯ НЕДЕЛИ (ADMIN)
          ========================================================= -->
     <div class="modal" id="modal-weekly-close-preview">
         <div class="modal-content">
@@ -7712,12 +7701,8 @@
         const AD_COOLDOWN_SECONDS = 30 * 60;
         const DAILY_AD_LIMIT = 5;
 
-        // AdsGram Rewarded test block.
-        // DEBUG обязательно отключим перед реальным запуском.
+        // Production AdsGram Rewarded block.
         const ADSGRAM_BLOCK_ID = "47861";
-
-        // Сейчас оставляем true, чтобы ваш тестовый AdsGram продолжал работать.
-        // Перед реальным запуском после настройки Reward URL меняем на false.
         const ADSGRAM_DEBUG = false;
 
         // Награда начисляется сразу после успешного AdsGram show().
@@ -9141,8 +9126,7 @@
             adsgramController = window.Adsgram.init({
                 blockId: ADSGRAM_BLOCK_ID,
                 debug: ADSGRAM_DEBUG,
-                debugConsole: true,
-                debugBannerType: "RewardedVideo"
+                debugConsole: false
             });
 
             return adsgramController;
@@ -9442,11 +9426,8 @@
 
             const attemptsText = document.getElementById("attempts-text");
 
-            if (userData.is_admin) {
-                attemptsText.innerText = `Попытки: ${userData.game_attempts} · 🧪 тестовый режим ∞`;
-            } else {
-                attemptsText.innerText = `Попытки: ${userData.game_attempts} · реклама ${userData.daily_ads_count}/${DAILY_AD_LIMIT}`;
-            }
+            attemptsText.innerText =
+                `Попытки: ${userData.game_attempts} · реклама ${userData.daily_ads_count}/${DAILY_AD_LIMIT}`;
 
             updateWalletButton();
             updateCommunityButton();
@@ -9912,31 +9893,21 @@
             const visibleCount = Math.min(rawCount, DAILY_AD_LIMIT);
 
             countNode.textContent = String(visibleCount);
-            chip.classList.toggle("complete", visibleCount >= DAILY_AD_LIMIT);
-            chip.classList.toggle("test-mode", Boolean(userData.is_admin));
+            chip.classList.toggle(
+                "complete",
+                visibleCount >= DAILY_AD_LIMIT
+            );
+            chip.classList.remove("test-mode");
 
             chip.setAttribute(
                 "aria-label",
-                userData.is_admin
-                    ? `Тестовый режим. Для обычного игрока лимит ${DAILY_AD_LIMIT} реклам в день. Счётчик: ${visibleCount} из ${DAILY_AD_LIMIT}`
-                    : `Просмотрено ${visibleCount} из ${DAILY_AD_LIMIT} реклам сегодня`
+                `Просмотрено ${visibleCount} из ${DAILY_AD_LIMIT} реклам сегодня`
             );
         }
 
         function refreshAdButton() {
             const btnAd = document.getElementById("btn-ad");
             updateAdLimitChip();
-
-            if (userData.is_admin) {
-                btnAd.disabled = false;
-                btnAd.innerHTML = adIconButtonMarkup(
-                    ADSGRAM_DEBUG
-                        ? "Тестовая реклама"
-                        : "Реклама за награду",
-                    "+50 ADP · +1 полёт"
-                );
-                return false;
-            }
 
             if (userData.daily_ads_count >= DAILY_AD_LIMIT) {
                 btnAd.disabled = true;
@@ -9994,33 +9965,6 @@
                     adTimerInterval = null;
                 }
             }, 1000);
-        }
-
-        async function grantDebugAdRewardOnServer() {
-            const response = await fetch(
-                `${API_URL}/api/user/watch-ad`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        init_data: telegramInitData
-                    })
-                }
-            );
-
-            const data = await response.json();
-
-            if (!response.ok || !data.success) {
-                throw new Error(
-                    data.detail ||
-                    data.reason ||
-                    "Не удалось начислить тестовую награду."
-                );
-            }
-
-            return data;
         }
 
         async function startAdRewardSession() {
@@ -10096,19 +10040,17 @@
                 btnAd.innerHTML =
                     "⏳ Загружаем рекламу...";
 
-                if (!ADSGRAM_DEBUG) {
-                    // Одноразовый server token создаётся ДО показа.
-                    const session =
-                        await startAdRewardSession();
+                // Одноразовая server session создаётся ДО показа.
+                const session =
+                    await startAdRewardSession();
 
-                    sessionId =
-                        String(session.session_id || "");
+                sessionId =
+                    String(session.session_id || "");
 
-                    if (!sessionId) {
-                        throw new Error(
-                            "Не удалось создать рекламную сессию."
-                        );
-                    }
+                if (!sessionId) {
+                    throw new Error(
+                        "Не удалось создать рекламную сессию."
+                    );
                 }
 
                 const controller =
@@ -10133,17 +10075,10 @@
                 btnAd.innerHTML =
                     "✅ Начисляем +50 ADP и 1 полёт...";
 
-                let data;
-
-                if (ADSGRAM_DEBUG) {
-                    data =
-                        await grantDebugAdRewardOnServer();
-                } else {
-                    data =
-                        await completeAdRewardSession(
-                            sessionId
-                        );
-                }
+                const data =
+                    await completeAdRewardSession(
+                        sessionId
+                    );
 
                 userData.game_attempts =
                     Number(data.game_attempts || 0);

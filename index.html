@@ -7637,11 +7637,6 @@
 
         /*
            v12.9.7 — MOBILE FIRST-LAUNCH HARDENING
-
-           Free ngrok may treat the first request from a fresh mobile
-           WebView as browser traffic. For calls to OUR API only, attach
-           ngrok-skip-browser-warning so the request reaches FastAPI
-           directly. FastAPI already allows all CORS headers.
         */
         const nativeFetch = window.fetch.bind(window);
 
@@ -7664,12 +7659,6 @@
                 )
                 || {}
             );
-
-            headers.set(
-                "ngrok-skip-browser-warning",
-                "true"
-            );
-
             headers.set(
                 "Cache-Control",
                 "no-cache"
@@ -7690,13 +7679,7 @@
                 resolve => setTimeout(resolve, ms)
             );
         }
-
-        // Free ngrok can return its browser-warning HTML instead of API JSON
-        // for direct GET requests. This header tells ngrok to pass the request
-        // straight through to FastAPI.
-        const NGROK_SKIP_HEADERS = {
-            "ngrok-skip-browser-warning": "true"
-        };
+    const API_DEFAULT_HEADERS = {};
         const BOT_USERNAME = "adp_flight_test_bot";
         const AD_COOLDOWN_SECONDS = 30 * 60;
         const DAILY_AD_LIMIT = 5;
@@ -9677,7 +9660,7 @@
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            ...NGROK_SKIP_HEADERS
+                            ...API_DEFAULT_HEADERS
                         },
                         body: JSON.stringify({
                             init_data: telegramInitData
@@ -10246,7 +10229,7 @@
             try {
                 const response = await fetch(
                     `${API_URL}/api/leaderboard`,
-                    { headers: NGROK_SKIP_HEADERS }
+                    { headers: API_DEFAULT_HEADERS }
                 );
                 const data = await response.json();
 
@@ -10337,7 +10320,7 @@
             try {
                 const response = await fetch(
                     `${API_URL}/api/leaderboard/previous`,
-                    { headers: NGROK_SKIP_HEADERS }
+                    { headers: API_DEFAULT_HEADERS }
                 );
                 const data = await response.json();
 
@@ -10400,7 +10383,7 @@
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...NGROK_SKIP_HEADERS
+                    ...API_DEFAULT_HEADERS
                 },
                 body: JSON.stringify({
                     init_data: telegramInitData
@@ -10674,7 +10657,7 @@
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        ...NGROK_SKIP_HEADERS
+                        ...API_DEFAULT_HEADERS
                     },
                     body: JSON.stringify({
                         init_data: telegramInitData
@@ -10839,7 +10822,7 @@
                                     method: "POST",
                                     headers: {
                                         "Content-Type": "application/json",
-                                        ...NGROK_SKIP_HEADERS
+                                        ...API_DEFAULT_HEADERS
                                     },
                                     body: JSON.stringify({
                                         init_data: telegramInitData,
@@ -10967,7 +10950,7 @@
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        ...NGROK_SKIP_HEADERS
+                        ...API_DEFAULT_HEADERS
                     },
                     body: JSON.stringify({
                         init_data: telegramInitData
@@ -11069,7 +11052,7 @@
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        ...NGROK_SKIP_HEADERS
+                        ...API_DEFAULT_HEADERS
                     },
                     body: JSON.stringify({
                         init_data: telegramInitData
